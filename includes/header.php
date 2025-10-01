@@ -17,7 +17,7 @@
         <div class="nav-container">
             <a href="index.php" class="nav-logo">
                 <img src="images/logo_fix.png" alt="BalResplay Logo" class="logo-img">
-                <span class="logo-text">BalResplay</span>
+                <span class="logo-text">BalRespla</span>
             </a>
             <div class="hamburger">
                 <span class="bar"></span>
