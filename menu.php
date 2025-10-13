@@ -37,7 +37,6 @@ include 'includes/header.php';
         </div>
     </section>
 
-    <!-- Rice Dishes -->
     <section id="rice" class="menu-section section-padding">
         <div class="container">
             <div class="section-header">
@@ -45,7 +44,6 @@ include 'includes/header.php';
                 <p class="section-subtitle">Hearty and satisfying meals</p>
             </div>
             <div class="menu-grid">
-                <!-- Fried Rice Chicken Grill -->
                 <div class="menu-item" data-id="f1" data-name="Fried Rice Chicken Grill" data-price="40000" data-img="https://placehold.co/100x100/e8e4d8/5c6e58?text=Fried+Rice+Grill">
                     <div class="item-image"><img src="https://placehold.co/300x300/e8e4d8/5c6e58?text=Fried+Rice+Grill" alt="Fried Rice Chicken Grill"></div>
                     <div class="item-info">
@@ -57,7 +55,6 @@ include 'includes/header.php';
                         </div>
                     </div>
                 </div>
-                <!-- Fried Rice Seafood -->
                 <div class="menu-item" data-id="f2" data-name="Fried Rice Seafood" data-price="35000" data-img="https://placehold.co/100x100/e8e4d8/5c6e58?text=Fried+Rice+Seafood">
                     <div class="item-image"><img src="https://placehold.co/300x300/e8e4d8/5c6e58?text=Fried+Rice+Seafood" alt="Fried Rice Seafood"></div>
                     <div class="item-info">
@@ -69,8 +66,7 @@ include 'includes/header.php';
                         </div>
                     </div>
                 </div>
-                 <!-- Ayam Bakar -->
-                <div class="menu-item" data-id="f3" data-name="Ayam Bakar" data-price="35000" data-img="https://placehold.co/100x100/e8e4d8/5c6e58?text=Ayam+Bakar">
+                 <div class="menu-item" data-id="f3" data-name="Ayam Bakar" data-price="35000" data-img="https://placehold.co/100x100/e8e4d8/5c6e58?text=Ayam+Bakar">
                     <div class="item-image"><img src="https://placehold.co/300x300/e8e4d8/5c6e58?text=Ayam+Bakar" alt="Ayam Bakar"></div>
                     <div class="item-info">
                         <h3>Ayam Bakar</h3>
@@ -81,7 +77,6 @@ include 'includes/header.php';
                         </div>
                     </div>
                 </div>
-                <!-- Ayam Geprek -->
                 <div class="menu-item" data-id="f4" data-name="Ayam Geprek" data-price="30000" data-img="https://placehold.co/100x100/e8e4d8/5c6e58?text=Ayam+Geprek">
                     <div class="item-image"><img src="https://placehold.co/300x300/e8e4d8/5c6e58?text=Ayam+Geprek" alt="Ayam Geprek"></div>
                     <div class="item-info">
@@ -97,7 +92,6 @@ include 'includes/header.php';
         </div>
     </section>
 
-    <!-- Noodles -->
     <section id="noodles" class="menu-section section-padding">
         <div class="container">
             <div class="section-header">
@@ -105,7 +99,6 @@ include 'includes/header.php';
                 <p class="section-subtitle">A slurp of happiness</p>
             </div>
             <div class="menu-grid">
-                <!-- Spaghetti Aglio Olio -->
                 <div class="menu-item" data-id="f5" data-name="Spaghetti Aglio Olio" data-price="30000" data-img="https://placehold.co/100x100/e8e4d8/5c6e58?text=Aglio+Olio">
                     <div class="item-image"><img src="https://placehold.co/300x300/e8e4d8/5c6e58?text=Aglio+Olio" alt="Spaghetti Aglio Olio"></div>
                     <div class="item-info">
@@ -117,7 +110,6 @@ include 'includes/header.php';
                         </div>
                     </div>
                 </div>
-                <!-- Spaghetti Bolognese -->
                 <div class="menu-item" data-id="f6" data-name="Spaghetti Bolognese" data-price="35000" data-img="https://placehold.co/100x100/e8e4d8/5c6e58?text=Bolognese">
                     <div class="item-image"><img src="https://placehold.co/300x300/e8e4d8/5c6e58?text=Bolognese" alt="Spaghetti Bolognese"></div>
                     <div class="item-info">
@@ -129,7 +121,6 @@ include 'includes/header.php';
                         </div>
                     </div>
                 </div>
-                <!-- Chicken Char Kwetiau -->
                 <div class="menu-item" data-id="f7" data-name="Chicken Char Kwetiau" data-price="39000" data-img="https://placehold.co/100x100/e8e4d8/5c6e58?text=Kwetiau">
                     <div class="item-image"><img src="https://placehold.co/300x300/e8e4d8/5c6e58?text=Kwetiau" alt="Chicken Char Kwetiau"></div>
                     <div class="item-info">
@@ -141,8 +132,7 @@ include 'includes/header.php';
                         </div>
                     </div>
                 </div>
-                 <!-- Seafood Noodle Fried -->
-                <div class="menu-item" data-id="f8" data-name="Seafood Noodle Fried" data-price="38000" data-img="https://placehold.co/100x100/e8e4d8/5c6e58?text=Mie+Seafood">
+                 <div class="menu-item" data-id="f8" data-name="Seafood Noodle Fried" data-price="38000" data-img="https://placehold.co/100x100/e8e4d8/5c6e58?text=Mie+Seafood">
                     <div class="item-image"><img src="https://placehold.co/300x300/e8e4d8/5c6e58?text=Mie+Seafood" alt="Seafood Noodle Fried"></div>
                     <div class="item-info">
                         <h3>Seafood Noodle Fried</h3>
@@ -157,7 +147,6 @@ include 'includes/header.php';
         </div>
     </section>
 
-    <!-- Lite & Easy -->
     <section id="lite-easy" class="menu-section section-padding">
         <div class="container">
             <div class="section-header">
@@ -165,7 +154,6 @@ include 'includes/header.php';
                 <p class="section-subtitle">Perfect for snacking</p>
             </div>
             <div class="menu-grid">
-                <!-- Crinkle Fries -->
                 <div class="menu-item" data-id="f9" data-name="Crinkle Fries" data-price="20000" data-img="https://placehold.co/100x100/e8e4d8/5c6e58?text=Fries">
                     <div class="item-image"><img src="https://placehold.co/300x300/e8e4d8/5c6e58?text=Fries" alt="Crinkle Fries"></div>
                     <div class="item-info">
@@ -177,7 +165,6 @@ include 'includes/header.php';
                         </div>
                     </div>
                 </div>
-                <!-- Pisang Crispy -->
                 <div class="menu-item" data-id="f10" data-name="Pisang Crispy" data-price="20000" data-img="https://placehold.co/100x100/e8e4d8/5c6e58?text=Pisang+Crispy">
                     <div class="item-image"><img src="https://placehold.co/300x300/e8e4d8/5c6e58?text=Pisang+Crispy" alt="Pisang Crispy"></div>
                     <div class="item-info">
@@ -189,7 +176,6 @@ include 'includes/header.php';
                         </div>
                     </div>
                 </div>
-                <!-- Roti Bakar Mix -->
                 <div class="menu-item" data-id="f11" data-name="Roti Bakar Mix" data-price="25000" data-img="https://placehold.co/100x100/e8e4d8/5c6e58?text=Roti+Bakar">
                     <div class="item-image"><img src="https://placehold.co/300x300/e8e4d8/5c6e58?text=Roti+Bakar" alt="Roti Bakar Mix"></div>
                     <div class="item-info">
@@ -201,7 +187,6 @@ include 'includes/header.php';
                         </div>
                     </div>
                 </div>
-                <!-- Burger Bal -->
                 <div class="menu-item" data-id="f12" data-name="Burger Bal" data-price="30000" data-img="https://placehold.co/100x100/e8e4d8/5c6e58?text=Burger">
                     <div class="item-image"><img src="https://placehold.co/300x300/e8e4d8/5c6e58?text=Burger" alt="Burger Bal"></div>
                     <div class="item-info">
@@ -387,8 +372,6 @@ include 'includes/header.php';
         </div>
     </section>
     
-    <!-- All other menu sections (tea, non-coffee, signature) should follow the same data-attribute pattern as above -->
-
     <section id="tea" class="menu-section section-padding">
         <div class="container">
             <div class="section-header">
@@ -694,19 +677,21 @@ include 'includes/header.php';
         </div>
     </section>
 
-    <!-- Cart Modal -->
     <div class="cart-modal" id="cart-modal">     
         <div class="cart-modal-content">
             <span class="cart-close" id="cart-close">&times;</span>
             <h2 class="cart-title">Pesanan Anda</h2>
             <div class="cart-items" id="cart-items">
-                <!-- Cart items will be injected here by JavaScript -->
-                 <div class="cart-empty-message">
+                <div class="cart-empty-message">
                     <i class="fas fa-shopping-cart"></i>
                     <p>Keranjang Anda masih kosong.</p>
                 </div>
             </div>
             <div class="cart-footer" id="cart-footer" style="display: none;">
+                <div class="cart-table-number">
+                    <span>Nomor Meja:</span>
+                    <span class="table-number-display">12</span>
+                </div>
                 <div class="cart-total">
                     <span>Total:</span>
                     <span class="cart-total-price" id="cart-total-price">0k</span>
@@ -790,7 +775,8 @@ document.addEventListener('DOMContentLoaded', () => {
                     price: price,
                     img: img,
                     variant: variant,
-                    quantity: 1
+                    quantity: 1,
+                    notes: '' // Tambah properti catatan
                 });
             }
             
@@ -841,6 +827,9 @@ document.addEventListener('DOMContentLoaded', () => {
                         </div>
                         <button class="cart-item-remove" data-id="${item.cartId}"><i class="fas fa-trash-alt"></i></button>
                     </div>
+                    <div class="cart-item-notes">
+                        <textarea class="notes-input" data-id="${item.cartId}" placeholder="Contoh: Tidak pedas, sedikit gula...">${item.notes}</textarea>
+                    </div>
                 `;
                 cartItemsContainer.appendChild(itemElement);
 
@@ -879,6 +868,18 @@ document.addEventListener('DOMContentLoaded', () => {
 
         updateCart();
     });
+
+    // Event listener untuk input catatan
+    cartItemsContainer.addEventListener('input', e => {
+        if (e.target.classList.contains('notes-input')) {
+            const cartId = e.target.dataset.id;
+            const itemToUpdate = cart.find(item => item.cartId === cartId);
+            if (itemToUpdate) {
+                itemToUpdate.notes = e.target.value;
+            }
+        }
+    });
+
 
     // Initial cart update on page load
     updateCart();
