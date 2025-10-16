@@ -666,6 +666,32 @@ h5 {
        scroll-snap-align: start;
     }
 
+    /* PERUBAHAN DIMULAI DI SINI */
+    .menu-categories {
+        justify-content: flex-start;
+        flex-wrap: nowrap;
+        overflow-x: auto;
+        padding-left: 10px;
+        padding-right: 10px;
+        scroll-snap-type: x mandatory;
+    }
+
+    .menu-categories::-webkit-scrollbar {
+       display: none;
+    }
+    
+    .menu-categories {
+       -ms-overflow-style: none;  /* IE/Edge */
+       scrollbar-width: none;     /* Firefox */
+    }
+
+    .category-link {
+        scroll-snap-align: start;
+        flex-shrink: 0; /* Mencegah item menyusut */
+    }
+    /* PERUBAHAN SELESAI DI SINI */
+
+
     /* Hilangkan scrollbar agar lebih clean */
     .menu-grid::-webkit-scrollbar {
        display: none;
@@ -700,7 +726,7 @@ h5 {
     /* Fullscreen Modal on Mobile */
     .cart-modal-content {
        width: 100%;
-       height: 75vh; /* 100% of viewport height */
+       height: 100vh; /* 100% of viewport height */
        max-width: 100%;
        border-radius: 0;
        margin: 0;
@@ -773,4 +799,57 @@ h5 {
         width: 100%;
         text-align: center;
     }
+}
+
+/* Styling untuk Ikon Status di Header */
+.order-status-icon {
+    display: flex;
+    align-items: center;
+    cursor: pointer;
+    position: relative;
+    font-size: 1.2rem;
+    color: var(--light-text);
+    margin-right: 25px; /* Jarak antara ikon status dan keranjang */
+    transition: var(--transition);
+}
+
+.order-status-icon:hover {
+    color: var(--accent-color);
+}
+
+/* Styling untuk item di Modal Status */
+.status-item {
+    display: grid;
+    grid-template-columns: 80px 1fr auto;
+    gap: 15px;
+    align-items: center;
+    padding: 15px 0;
+    border-bottom: 1px solid var(--tertiary-color);
+}
+
+.status-item:last-child {
+    border-bottom: none;
+}
+
+.status-item-info h4 {
+    font-size: 1.1rem;
+    margin-bottom: 5px;
+    font-family: "Montserrat", sans-serif;
+    font-weight: 500;
+}
+
+.status-item-quantity {
+    color: var(--text-muted);
+    font-size: 0.9rem;
+    margin: 0;
+}
+
+.status-tag {
+    background-color: var(--accent-color);
+    color: var(--dark-bg);
+    padding: 6px 14px;
+    border-radius: 20px;
+    font-size: 13px;
+    font-weight: bold;
+    white-space: nowrap;
 }
