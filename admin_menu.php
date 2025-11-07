@@ -77,7 +77,7 @@
                         <p>Nasi goreng spesial disajikan dengan ayam panggang.</p>
                         <div class="item-meta-admin">
                             <span class="item-category-badge">Rice</span>
-                            <span class="item-price">40k</span>
+                            <!-- <span class="item-price">40k</span> (DIHAPUS SESUAI PERMINTAAN) -->
                         </div>
                     </div>
                     <div class="item-actions">
@@ -98,7 +98,7 @@
                         <p>Shot espresso yang disajikan dengan tambahan air.</p>
                         <div class="item-meta-admin">
                             <span class="item-category-badge">Coffee</span>
-                            <span class="item-price">20k</span>
+                            <!-- <span class="item-price">20k</span> (DIHAPUS SESUAI PERMINTAAN) -->
                         </div>
                     </div>
                      <div class="item-actions">
@@ -119,7 +119,7 @@
                         <p>Kentang goreng renyah dengan potongan berkerut.</p>
                         <div class="item-meta-admin">
                             <span class="item-category-badge">Lite & Easy</span>
-                            <span class="item-price">20k</span>
+                            <!-- <span class="item-price">20k</span> (DIHAPUS SESUAI PERMINTAAN) -->
                         </div>
                     </div>
                      <div class="item-actions">
@@ -132,19 +132,30 @@
                     </div>
                 </div>
 
+                
+
                 <!-- ... Item-item menu lainnya akan di-load di sini ... -->
 
             </div>
         </main>
+        
+        <!-- (BARU) Overlay untuk menutup sidebar di mobile -->
+        <div class="sidebar-overlay" id="sidebar-overlay"></div>
     </div>
 
     <script>
         document.addEventListener('DOMContentLoaded', () => {
             const hamburger = document.getElementById('hamburger');
             const sidebar = document.getElementById('sidebar');
+            const overlay = document.getElementById('sidebar-overlay'); // (BARU)
 
             hamburger.addEventListener('click', () => {
-                sidebar.classList.toggle('show');
+                sidebar.classList.add('show'); // (DIUBAH) Hanya menambah 'show'
+            });
+
+            // (BARU) Klik overlay untuk menutup sidebar
+            overlay.addEventListener('click', () => {
+                sidebar.classList.remove('show');
             });
 
             // Logika untuk tombol hapus (untuk integrasi backend)
@@ -167,37 +178,6 @@
 
             // Menyesuaikan style kartu dari menu2.css agar tidak bentrok
             // (BLOK INI DIHAPUS KARENA STYLE SUDAH DIPINDAH KE ADMIN.CSS)
-            /*
-            const menuStyles = document.getElementById('menu-card-styles');
-            if(menuStyles) {
-                // Trik untuk memuat CSS eksternal dan mengambil isinya
-                fetch(menuStyles.href)
-                    .then(res => res.text())
-                    .then(css => {
-                        // Ekstrak hanya style yang relevan (kartu)
-                        // Ini adalah cara 'aman' untuk mengambil sebagian style
-                        const cardStyles = `
-                            .menu-item { ${css.match(/\.menu-item \{([^}]+)\}/s)[1]} }
-                            .menu-item:hover { ${css.match(/\.menu-item:hover \{([^}]+)\}/s)[1]} }
-                            .item-image { ${css.match(/\.item-image \{([^}]+)\}/s)[1]} }
-                            .item-image img { ${css.match(/\.item-image img \{([^}]+)\}/s)[1]} }
-                            .menu-item:hover .item-image img { ${css.match(/\.menu-item:hover \.item-image img \{([^}]+)\}/s)[1]} }
-                            .item-info { ${css.match(/\.item-info \{([^}]+)\}/s)[1]} }
-                            .item-info h3 { ${css.match(/\.item-info h3 \{([^}]+)\}/s)[1]} }
-                            .item-info p { ${css.match(/\.item-info p \{([^}]+)\}/s)[1]} }
-                            .item-price { ${css.match(/\.item-price \{([^}]+)\}/s)[1]} }
-                        `;
-                        
-                        // Hapus link stylesheet lama
-                        menuStyles.remove();
-                        
-                        // Tambahkan style yang sudah diekstrak ke <head>
-                        const styleElement = document.createElement('style');
-                        styleElement.textContent = cardStyles;
-                        document.head.appendChild(styleElement);
-                    });
-            }
-            */
         });
     </script>
 </body>

@@ -139,6 +139,9 @@
                 </form>
             </div>
         </main>
+        
+        <!-- (BARU) Overlay untuk menutup sidebar di mobile -->
+        <div class="sidebar-overlay" id="sidebar-overlay"></div>
     </div>
 
     <script>
@@ -146,8 +149,15 @@
             // --- Logika Sidebar Hamburger ---
             const hamburger = document.getElementById('hamburger');
             const sidebar = document.getElementById('sidebar');
+            const overlay = document.getElementById('sidebar-overlay'); // (BARU)
+
             hamburger.addEventListener('click', () => {
-                sidebar.classList.toggle('show');
+                sidebar.classList.add('show'); // (DIUBAH) Hanya menambah 'show'
+            });
+
+            // (BARU) Klik overlay untuk menutup sidebar
+            overlay.addEventListener('click', () => {
+                sidebar.classList.remove('show');
             });
 
             // --- Logika Form Varian Dinamis ---
