@@ -160,6 +160,36 @@ document.addEventListener('DOMContentLoaded', () => {
             }
         });
     });
+
+    // --- LOGIKA BARU UNTUK KONFIRMASI PESANAN ---
+    const confirmOrderBtn = document.querySelector('.btn-confirm-order');
+
+    confirmOrderBtn.addEventListener('click', () => {
+        const currentCartData = JSON.parse(sessionStorage.getItem('cartData'));
+        
+        if (currentCartData && currentCartData.length > 0) {
+            // Buat objek pesanan dengan status awal
+            const order = {
+                items: currentCartData,
+                status: 'Menunggu Konfirmasi',
+                orderTime: new Date().getTime() // Simpan waktu pemesanan untuk simulasi
+            };
+
+            // Simpan data pesanan ke sessionStorage
+            sessionStorage.setItem('orderStatusData', JSON.stringify(order));
+            
+            // Hapus data keranjang lama
+            sessionStorage.removeItem('cartData');
+            sessionStorage.removeItem('cartTotalPrice');
+
+            // Arahkan kembali ke halaman menu
+            window.location.href = 'menu.php';
+        } else {
+            // Seharusnya tidak terjadi jika user datang dari menu, tapi sebagai pengaman
+            alert('Tidak ada item untuk dikonfirmasi.');
+            window.location.href = 'menu.php';
+        }
+    });
 });
 </script>
 </body>

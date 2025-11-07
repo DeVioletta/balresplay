@@ -69,6 +69,7 @@ h5 {
 
 .nav-menu {
     display: flex;
+    align-items: center; /* Memastikan ikon sejajar */
     list-style: none;
 }
 
@@ -666,7 +667,6 @@ h5 {
        scroll-snap-align: start;
     }
 
-    /* PERUBAHAN DIMULAI DI SINI */
     .menu-categories {
         justify-content: flex-start;
         flex-wrap: nowrap;
@@ -689,19 +689,16 @@ h5 {
         scroll-snap-align: start;
         flex-shrink: 0; /* Mencegah item menyusut */
     }
-    /* PERUBAHAN SELESAI DI SINI */
 
-
-    /* Hilangkan scrollbar agar lebih clean */
     .menu-grid::-webkit-scrollbar {
        display: none;
     }
     .menu-grid {
-       -ms-overflow-style: none;  /* IE/Edge */
-       scrollbar-width: none;     /* Firefox */
+       -ms-overflow-style: none;
+       scrollbar-width: none;
     }
      .menu-nav {
-         top: 40px; /* Sesuaikan tinggi header */
+         top: 40px;
      }
 
     .hamburger {
@@ -723,19 +720,18 @@ h5 {
        font-size: 2rem;
     }
 
-    /* Fullscreen Modal on Mobile */
     .cart-modal-content {
        width: 100%;
-       height: 100vh; /* 100% of viewport height */
+       height: 100vh;
        max-width: 100%;
        border-radius: 0;
        margin: 0;
        border: none;
-       transform: translateY(100%); /* Start off-screen at the bottom */
+       transform: translateY(100%);
        transition: transform 0.4s cubic-bezier(0.25, 1, 0.5, 1);
     }
     .cart-modal.show .cart-modal-content {
-        transform: translateY(0); /* Slide in from the bottom */
+        transform: translateY(0);
     }
      .cart-title, .cart-footer {
         padding-left: 20px;
@@ -801,6 +797,8 @@ h5 {
     }
 }
 
+/* --- STYLE BARU UNTUK STATUS PESANAN --- */
+
 /* Styling untuk Ikon Status di Header */
 .order-status-icon {
     display: flex;
@@ -817,11 +815,40 @@ h5 {
     color: var(--accent-color);
 }
 
-/* Styling untuk item di Modal Status */
+/* Styling untuk Modal Status */
+/* Menggunakan style .cart-modal yang sudah ada, jadi tidak perlu duplikat. */
+/* Cukup styling untuk konten di dalamnya. */
+
+.status-header {
+    padding: 10px 30px;
+    text-align: center;
+    border-bottom: 1px solid var(--tertiary-color);
+    margin-bottom: 10px;
+}
+
+.status-header p {
+    font-size: 1.1rem;
+    color: var(--text-muted);
+    margin: 0;
+}
+
+.status-header strong {
+    margin-top: 5px;
+    display: inline-block;
+    font-size: 1.2rem;
+    color: var(--accent-color);
+    padding: 5px 15px;
+    border-radius: 20px;
+    background-color: var(--secondary-color);
+}
+
+.status-items-list {
+    /* Padding sudah dihandle oleh .cart-items */
+}
+
 .status-item {
-    display: grid;
-    grid-template-columns: 80px 1fr auto;
-    gap: 15px;
+    display: flex;
+    justify-content: space-between;
     align-items: center;
     padding: 15px 0;
     border-bottom: 1px solid var(--tertiary-color);
@@ -832,24 +859,30 @@ h5 {
 }
 
 .status-item-info h4 {
-    font-size: 1.1rem;
-    margin-bottom: 5px;
+    font-size: 1rem;
     font-family: "Montserrat", sans-serif;
     font-weight: 500;
-}
-
-.status-item-quantity {
-    color: var(--text-muted);
-    font-size: 0.9rem;
     margin: 0;
 }
 
-.status-tag {
-    background-color: var(--accent-color);
-    color: var(--dark-bg);
-    padding: 6px 14px;
-    border-radius: 20px;
-    font-size: 13px;
-    font-weight: bold;
+.status-item-info small {
+    font-size: 0.85rem;
+    color: var(--text-muted);
+    font-style: italic;
+    display: block; /* Agar catatan di baris baru */
+    margin-top: 4px;
+}
+
+.status-item-price {
+    font-weight: 500;
+    color: var(--light-text);
+    font-size: 1rem;
     white-space: nowrap;
+}
+
+@media (max-width: 768px) {
+    .status-header {
+        padding-left: 20px;
+        padding-right: 20px;
+    }
 }

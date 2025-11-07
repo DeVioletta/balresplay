@@ -723,8 +723,23 @@ include 'includes/header.php';
         </div>
     </div>
     
+    <!-- MODAL BARU: Order Status Modal -->
+    <div class="cart-modal" id="order-status-modal">
+        <div class="cart-modal-content">
+            <span class="cart-close" id="status-close">&times;</span>
+            <h2 class="cart-title">Status Pesanan Anda</h2>
+            <div id="order-status-details">
+                <!-- Konten status akan di-generate oleh JavaScript -->
+                <div class="cart-empty-message">
+                    <p>Tidak ada pesanan yang sedang aktif.</p>
+                </div>
+            </div>
+        </div>
+    </div>
+    
 <script>
 document.addEventListener('DOMContentLoaded', () => {
+    // === ELEMEN UNTUK KERANJANG ===
     const cartIcon = document.getElementById('cart-icon');
     const cartModal = document.getElementById('cart-modal');
     const cartClose = document.getElementById('cart-close');
@@ -736,41 +751,34 @@ document.addEventListener('DOMContentLoaded', () => {
     const cartFooter = document.getElementById('cart-footer');
     const placeOrderBtn = document.getElementById('place-order-btn');
     
+    // === ELEMEN BARU UNTUK STATUS PESANAN ===
+    const orderStatusIcon = document.getElementById('order-status-icon');
+    const orderStatusModal = document.getElementById('order-status-modal');
+    const statusClose = document.getElementById('status-close');
+    const orderStatusDetailsContainer = document.getElementById('order-status-details');
+
     let cart = [];
     let totalPrice = 0;
 
-    // Fungsi untuk membuka modal
-    const openModal = () => {
-        cartModal.classList.add('show');
-    };
+    // === FUNGSI-FUNGSI UNTUK KERANJANG ===
+    const openModal = () => cartModal.classList.add('show');
+    const closeModal = () => cartModal.classList.remove('show');
 
-    // Fungsi untuk menutup modal
-    const closeModal = () => {
-        cartModal.classList.remove('show');
-    };
-
-    // Event listeners untuk membuka/menutup modal
     cartIcon.addEventListener('click', openModal);
     cartClose.addEventListener('click', closeModal);
     continueShoppingBtn.addEventListener('click', closeModal);
     cartModal.addEventListener('click', (e) => {
-        if (e.target === cartModal) {
-            closeModal();
-        }
+        if (e.target === cartModal) closeModal();
     });
 
-    // Event listener untuk tombol "Tambah"
     addToCartButtons.forEach(button => {
         button.addEventListener('click', (e) => {
             const menuItem = e.target.closest('.menu-item');
-            
             const id = menuItem.dataset.id;
             const name = menuItem.dataset.name;
             const img = menuItem.dataset.img;
-            
             let price;
             let variant = null;
-            
             const variantInput = menuItem.querySelector('.item-variants input[type="radio"]:checked');
             
             if (variantInput) {
@@ -779,33 +787,18 @@ document.addEventListener('DOMContentLoaded', () => {
             } else {
                 price = parseFloat(menuItem.dataset.price);
             }
-
-            // Membuat ID unik untuk item di keranjang berdasarkan produk ID dan variannya
             const cartItemId = variant ? `${id}_${variant}` : id;
-
             const existingItem = cart.find(item => item.cartId === cartItemId);
-            
             if (existingItem) {
                 existingItem.quantity++;
             } else {
-                cart.push({
-                    cartId: cartItemId,
-                    id: id,
-                    name: name,
-                    price: price,
-                    img: img,
-                    variant: variant,
-                    quantity: 1,
-                    notes: '' // Tambah properti catatan
-                });
+                cart.push({ cartId: cartItemId, id: id, name: name, price: price, img: img, variant: variant, quantity: 1, notes: '' });
             }
-            
             updateCart();
             openModal();
         });
     });
 
-    // Mengubah harga tampilan saat varian dipilih
     document.querySelectorAll('.item-variants input[type="radio"]').forEach(radio => {
         radio.addEventListener('change', (e) => {
             const menuItem = e.target.closest('.menu-item');
@@ -815,18 +808,12 @@ document.addEventListener('DOMContentLoaded', () => {
         });
     });
 
-
     function updateCart() {
         cartItemsContainer.innerHTML = '';
         let totalItems = 0;
-        totalPrice = 0; // Reset total price
-
+        totalPrice = 0;
         if (cart.length === 0) {
-            cartItemsContainer.innerHTML = `
-                <div class="cart-empty-message">
-                    <i class="fas fa-shopping-cart"></i>
-                    <p>Keranjang Anda masih kosong.</p>
-                </div>`;
+            cartItemsContainer.innerHTML = `<div class="cart-empty-message"><i class="fas fa-shopping-cart"></i><p>Keranjang Anda masih kosong.</p></div>`;
             cartFooter.style.display = 'none';
         } else {
             cart.forEach(item => {
@@ -852,13 +839,11 @@ document.addEventListener('DOMContentLoaded', () => {
                     </div>
                 `;
                 cartItemsContainer.appendChild(itemElement);
-
                 totalItems += item.quantity;
                 totalPrice += item.price * item.quantity;
             });
             cartFooter.style.display = 'block';
         }
-
         cartCountElement.textContent = totalItems;
         cartTotalPriceElement.textContent = `${(totalPrice / 1000).toLocaleString('id-ID')}k`;
     }
@@ -866,9 +851,7 @@ document.addEventListener('DOMContentLoaded', () => {
     cartItemsContainer.addEventListener('click', e => {
         const target = e.target.closest('button');
         if (!target) return;
-
         const cartId = target.dataset.id;
-
         if (target.classList.contains('quantity-btn')) {
             const action = target.dataset.action;
             const itemToUpdate = cart.find(item => item.cartId === cartId);
@@ -876,48 +859,102 @@ document.addEventListener('DOMContentLoaded', () => {
                 itemToUpdate.quantity++;
             } else if (action === 'decrease') {
                 itemToUpdate.quantity--;
-                if (itemToUpdate.quantity <= 0) {
-                    cart = cart.filter(item => item.cartId !== cartId);
-                }
+                if (itemToUpdate.quantity <= 0) cart = cart.filter(item => item.cartId !== cartId);
             }
         }
-
         if (target.classList.contains('cart-item-remove')) {
             cart = cart.filter(item => item.cartId !== cartId);
         }
-
         updateCart();
     });
 
-    // Event listener untuk input catatan
     cartItemsContainer.addEventListener('input', e => {
         if (e.target.classList.contains('notes-input')) {
             const cartId = e.target.dataset.id;
             const itemToUpdate = cart.find(item => item.cartId === cartId);
-            if (itemToUpdate) {
-                itemToUpdate.notes = e.target.value;
-            }
+            if (itemToUpdate) itemToUpdate.notes = e.target.value;
         }
     });
 
-    // Event listener untuk tombol "Pesan Sekarang"
     placeOrderBtn.addEventListener('click', () => {
         if (cart.length > 0) {
-            // Simpan data ke sessionStorage
             sessionStorage.setItem('cartData', JSON.stringify(cart));
             sessionStorage.setItem('cartTotalPrice', totalPrice);
-            sessionStorage.setItem('tableNumber', '12'); // Hardcoded table number
-
-            // Arahkan ke halaman pembayaran
+            sessionStorage.setItem('tableNumber', '12');
             window.location.href = 'payment.php';
         } else {
             alert('Keranjang Anda kosong!');
         }
     });
 
-    // Initial cart update on page load
-    updateCart();
+    // === LOGIKA BARU UNTUK STATUS PESANAN ===
 
+    const openStatusModal = () => {
+        updateOrderStatusView();
+        orderStatusModal.classList.add('show');
+    };
+    const closeStatusModal = () => orderStatusModal.classList.remove('show');
+
+    orderStatusIcon.addEventListener('click', openStatusModal);
+    statusClose.addEventListener('click', closeStatusModal);
+    orderStatusModal.addEventListener('click', (e) => {
+        if (e.target === orderStatusModal) closeStatusModal();
+    });
+    
+    // Fungsi global untuk memperbarui tampilan modal status
+    window.updateOrderStatusView = function() {
+        let currentOrder = JSON.parse(sessionStorage.getItem('orderStatusData'));
+        if (!currentOrder) {
+            orderStatusDetailsContainer.innerHTML = `<div class="cart-empty-message"><p>Tidak ada pesanan aktif.</p></div>`;
+            return;
+        }
+
+        let itemsHTML = currentOrder.items.map(item => `
+            <div class="status-item">
+                <div class="status-item-info">
+                    <h4>${item.quantity}x ${item.name} ${item.variant ? `(${item.variant})` : ''}</h4>
+                    ${item.notes ? `<small>Catatan: ${item.notes}</small>` : ''}
+                </div>
+                <span class="status-item-price">Rp ${(item.price * item.quantity).toLocaleString('id-ID')}</span>
+            </div>
+        `).join('');
+
+        orderStatusDetailsContainer.innerHTML = `
+            <div class="status-header">
+                <p>Status Saat Ini:</p>
+                <strong>${currentOrder.status}</strong>
+            </div>
+            <div class="cart-items" style="padding: 0 30px;">
+                ${itemsHTML}
+            </div>
+        `;
+    };
+
+    // Logika utama untuk memeriksa dan mengelola status pesanan saat halaman dimuat
+    const orderDataString = sessionStorage.getItem('orderStatusData');
+    if (orderDataString) {
+        let order = JSON.parse(orderDataString);
+        orderStatusIcon.style.display = 'flex'; // Tampilkan ikon jika ada pesanan
+
+        const timeSinceOrder = new Date().getTime() - order.orderTime;
+        const timeToUpdate = 20000; // 20 detik untuk berubah status
+
+        if (order.status === 'Menunggu Konfirmasi' && timeSinceOrder < timeToUpdate) {
+            setTimeout(() => {
+                let freshOrder = JSON.parse(sessionStorage.getItem('orderStatusData'));
+                if (freshOrder && freshOrder.status === 'Menunggu Konfirmasi') {
+                    freshOrder.status = 'Sedang Dimasak';
+                    sessionStorage.setItem('orderStatusData', JSON.stringify(freshOrder));
+                    if (orderStatusModal.classList.contains('show')) {
+                        updateOrderStatusView(); // Langsung update jika modal terbuka
+                    }
+                }
+            }, timeToUpdate - timeSinceOrder);
+        }
+    }
+
+    // Panggil updateCart() di akhir untuk inisialisasi
+    updateCart();
 });
 </script>
 </body>
