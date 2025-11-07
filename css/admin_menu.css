@@ -193,6 +193,60 @@ input:focus, select:focus, textarea:focus {
     border-color: var(--accent-color);
 }
 
+/* === (BARU) STYLE KARTU MENU (Dipindah dari menu2.css) === */
+.menu-item {
+    background: var(--secondary-color);
+    border-radius: 10px;
+    overflow: hidden;
+    transition: var(--transition);
+    box-shadow: 0 5px 15px rgba(0, 0, 0, 0.2);
+    display: flex;
+    flex-direction: column;
+}
+.menu-item:hover {
+    transform: translateY(-5px);
+    box-shadow: 0 10px 25px rgba(0, 0, 0, 0.4);
+}
+.item-image {
+    height: 200px;
+    overflow: hidden;
+    position: relative;
+}
+.item-image img {
+    width: 100%;
+    height: 100%;
+    object-fit: cover;
+    transition: var(--transition);
+}
+.menu-item:hover .item-image img {
+    transform: scale(1.1);
+}
+.item-info {
+    padding: 20px;
+    display: flex;
+    flex-direction: column;
+    flex-grow: 1; /* Membuat info item memenuhi sisa ruang */
+}
+.item-info h3 {
+    font-size: 1.5rem;
+    margin-bottom: 10px;
+    color: var(--light-text);
+}
+.item-info p {
+    color: var(--text-muted);
+    margin-bottom: 15px;
+    font-size: 14px;
+    line-height: 1.5;
+    flex-grow: 1; /* Mendorong meta ke bawah */
+}
+.item-price {
+    font-size: 1.3rem;
+    font-weight: 700;
+    color: var(--accent-color);
+}
+/* === (AKHIR) STYLE KARTU MENU === */
+
+
 /* === GRID MENU ADMIN === */
 .admin-menu-grid {
     display: grid;
@@ -222,7 +276,7 @@ input:focus, select:focus, textarea:focus {
 .item-actions {
     display: grid;
     grid-template-columns: 1fr 1fr;
-    gap: 10px;
+    gap: 30px; /* <- Diubah dari 10px menjadi 15px */
     padding: 0 20px 20px; /* Beda dari item-meta */
 }
 
@@ -251,84 +305,11 @@ input:focus, select:focus, textarea:focus {
     background-color: #a52a2a;
 }
 
-/* === HALAMAN FORMULIR === */
-.form-container {
-    max-width: 900px;
-    margin: 0 auto;
-}
+/* === (DIHAPUS) STYLING PREVIEW GAMBAR === */
+/* (Blok ini dipindahkan ke form.css) */
 
-.form-card {
-    background-color: var(--darker-bg);
-    border: 1px solid var(--tertiary-color);
-    border-radius: 10px;
-    overflow: hidden;
-}
-
-.form-section {
-    padding: 24px 30px;
-    border-bottom: 1px solid var(--tertiary-color);
-}
-.form-section:last-child {
-    border-bottom: none;
-}
-
-.form-section h4 {
-    font-size: 1.5rem;
-    margin-top: 0;
-    margin-bottom: 20px;
-    color: var(--light-text);
-}
-
-.form-group {
-    margin-bottom: 20px;
-}
-
-.form-hint {
-    font-size: 0.9rem;
-    color: var(--text-muted);
-    font-style: italic;
-    margin-bottom: 20px;
-    padding: 10px;
-    background-color: var(--dark-bg);
-    border-radius: 5px;
-}
-
-/* Varian Dinamis */
-#variants-container .variant-row {
-    display: grid;
-    grid-template-columns: 1fr 1fr 1fr auto;
-    gap: 10px;
-    align-items: center;
-    margin-bottom: 10px;
-}
-
-.btn-delete-variant {
-    background: none;
-    border: 1px solid #8b0000;
-    color: #8b0000;
-    padding: 8px 12px;
-    border-radius: 5px;
-    cursor: pointer;
-}
-.btn-delete-variant:hover {
-    background: #8b0000;
-    color: var(--light-text);
-}
-.btn-delete-variant:disabled {
-    border-color: var(--tertiary-color);
-    color: var(--tertiary-color);
-    cursor: not-allowed;
-    background: none;
-}
-
-
-.form-actions {
-    display: flex;
-    justify-content: flex-end;
-    gap: 15px;
-    padding: 24px 30px;
-    background-color: var(--secondary-color);
-}
+/* === (DIHAPUS) HALAMAN FORMULIR === */
+/* (Blok ini dipindahkan ke form.css) */
 
 /* === RESPONSIVE === */
 @media (max-width: 992px) {
@@ -357,9 +338,31 @@ input:focus, select:focus, textarea:focus {
         font-size: 1.8rem;
     }
     
-    #variants-container .variant-row {
-        grid-template-columns: 1fr; /* Stack di HP */
+    /* (BARU) LOGIKA SCROLL-X GRID MENU ADMIN */
+    .admin-menu-grid {
+        display: flex;
+        flex-wrap: nowrap;
+        overflow-x: auto;
+        gap: 15px;
+        padding: 20px 10px;
+        scroll-snap-type: x mandatory;
+        /* Hapus style grid */
+        grid-template-columns: none; 
     }
+
+    .admin-menu-grid .menu-item {
+        flex: 0 0 90%; /* <- (DISESUAIKAN) Lebar kartu 90% */
+        scroll-snap-align: start;
+        width: auto; /* Override jika ada */
+    }
+
+    /* Sembunyikan scrollbar */
+    .admin-menu-grid::-webkit-scrollbar { display: none; }
+    .admin-menu-grid { -ms-overflow-style: none; scrollbar-width: none; }
+    /* (AKHIR) LOGIKA SCROLL-X */
+
+    /* (DIHAPUS) RESPONSIVE FORM */
+    /* (Blok #variants-container dipindahkan ke form.css) */
 }
 
 @media (max-width: 576px) {
@@ -368,16 +371,6 @@ input:focus, select:focus, textarea:focus {
         align-items: stretch;
     }
     
-    .form-section {
-        padding: 20px 15px;
-    }
-    
-    .form-actions {
-        padding: 20px 15px;
-        flex-direction: column-reverse;
-    }
-    .form-actions .btn {
-        width: 100%;
-        justify-content: center;
-    }
+    /* (DIHAPUS) RESPONSIVE FORM */
+    /* (Blok .form-section dan .form-actions dipindahkan ke form.css) */
 }

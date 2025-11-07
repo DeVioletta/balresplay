@@ -18,7 +18,8 @@
     <title>Admin | <?php echo $page_title; ?></title>
     <!-- CSS Utama -->
     <link rel="stylesheet" href="css/variable.css">
-    <link rel="stylesheet" href="css/admin.css">
+    <link rel="stylesheet" href="css/admin_menu.css">
+    <link rel="stylesheet" href="css/menu_form.css"> <!-- (LINK BARU DITAMBAHKAN) -->
     <!-- Font & Ikon -->
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
     <link href="https://fonts.googleapis.com/css2?family=Cormorant+Garamond:wght@300;400;600;700&family=Montserrat:wght@300;400;500&display=swap" rel="stylesheet">
@@ -58,7 +59,7 @@
                     Form akan mengirim data ke script PHP (misal: save_menu.php)
                     Gunakan 'enctype="multipart/form-data"' jika ingin upload gambar
                 -->
-                <form action="save_menu.php" method="POST" class="form-card">
+                <form action="save_menu.php" method="POST" class="form-card" enctype="multipart/form-data">
                     <!-- ID Produk (tersembunyi) untuk mode Edit -->
                     <?php if ($is_edit_mode): ?>
                         <input type="hidden" name="product_id" value="<?php echo $product_id; ?>">
@@ -76,9 +77,9 @@
                             <textarea id="product_description" name="product_description" rows="3" placeholder="cth: Shot espresso yang disajikan dengan tambahan air..."></textarea>
                         </div>
                         <div class="form-group">
-                            <label for="product_category">Kategori</label>
-                            <select id="product_category" name="product_category" required>
-                                <option value="" disabled selected>Pilih Kategori</option>
+                            <label for="product_category">Kategori (Pilih yang sudah ada)</label>
+                            <select id="product_category" name="product_category">
+                                <option value="" selected>Pilih Kategori</option>
                                 <option value="rice">Rice</option>
                                 <option value="noodles">Noodles</option>
                                 <option value="lite-easy">Lite & Easy</option>
@@ -89,8 +90,15 @@
                             </select>
                         </div>
                         <div class="form-group">
-                            <label for="product_image_url">URL Gambar</label>
-                            <input type="text" id="product_image_url" name="product_image_url" placeholder="cth: https://placehold.co/300x300/...">
+                            <label for="new_category">Atau Kategori Baru (Kosongkan jika memilih di atas)</label>
+                            <input type="text" id="new_category" name="new_category" placeholder="cth: Pastry">
+                        </div>
+                        <div class="form-group">
+                            <label for="product_image">Upload Gambar</label>
+                            <input type="file" id="product_image" name="product_image" accept="image/*">
+                            <div class="image-preview-container">
+                                <img id="image_preview" src="https://placehold.co/300x200/2c2c2c/a0a0a0?text=Preview+Gambar" alt="Preview Gambar">
+                            </div>
                         </div>
                     </div>
 
@@ -169,6 +177,24 @@
                     if (variantsContainer.children.length > 1) {
                         e.target.closest('.variant-row').remove();
                     }
+                }
+            });
+
+            // --- Logika BARU untuk Image Preview ---
+            const imageInput = document.getElementById('product_image');
+            const imagePreview = document.getElementById('image_preview');
+
+            imageInput.addEventListener('change', (e) => {
+                const file = e.target.files[0];
+                if (file) {
+                    const reader = new FileReader();
+                    reader.onload = (event) => {
+                        imagePreview.src = event.target.result;
+                    };
+                    reader.readAsDataURL(file);
+                } else {
+                    // Kembalikan ke placeholder jika tidak ada file
+                    imagePreview.src = 'https://placehold.co/300x200/2c2c2c/a0a0a0?text=Preview+Gambar';
                 }
             });
         });

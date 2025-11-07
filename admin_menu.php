@@ -6,9 +6,9 @@
     <title>Admin | Manajemen Menu</title>
     <!-- CSS Utama -->
     <link rel="stylesheet" href="css/variable.css">
-    <link rel="stylesheet" href="css/admin.css">
+    <link rel="stylesheet" href="css/admin_menu.css">
     <!-- CSS untuk Kartu Menu (diadaptasi dari menu2.css) -->
-    <link rel="stylesheet" href="css/menu2.css" id="menu-card-styles">
+    <!-- <link rel="stylesheet" href="css/menu2.css" id="menu-card-styles"> (DIHAPUS, style dipindah ke admin.css) -->
     <!-- Font & Ikon -->
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
     <link href="https://fonts.googleapis.com/css2?family=Cormorant+Garamond:wght@300;400;600;700&family=Montserrat:wght@300;400;500&display=swap" rel="stylesheet">
@@ -98,7 +98,7 @@
                         <p>Shot espresso yang disajikan dengan tambahan air.</p>
                         <div class="item-meta-admin">
                             <span class="item-category-badge">Coffee</span>
-                            <span class="item-price">Mulai 20k</span>
+                            <span class="item-price">20k</span>
                         </div>
                     </div>
                      <div class="item-actions">
@@ -166,7 +166,8 @@
             });
 
             // Menyesuaikan style kartu dari menu2.css agar tidak bentrok
-            // Kita hanya ingin style kartu, bukan layout grid halamannya
+            // (BLOK INI DIHAPUS KARENA STYLE SUDAH DIPINDAH KE ADMIN.CSS)
+            /*
             const menuStyles = document.getElementById('menu-card-styles');
             if(menuStyles) {
                 // Trik untuk memuat CSS eksternal dan mengambil isinya
@@ -196,6 +197,7 @@
                         document.head.appendChild(styleElement);
                     });
             }
+            */
         });
     </script>
 </body>
