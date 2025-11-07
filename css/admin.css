@@ -1,0 +1,383 @@
+/* Menggunakan variabel dari /css/variable.css */
+
+/* === STRUKTUR LAYOUT UTAMA === */
+body {
+    background-color: var(--dark-bg);
+    color: var(--light-text);
+    font-family: "Montserrat", sans-serif;
+    margin: 0;
+}
+
+h1, h2, h3, h4, h5 {
+    font-family: "Cormorant Garamond", serif;
+    font-weight: 600;
+    line-height: 1.2;
+}
+
+.admin-layout {
+    display: grid;
+    grid-template-columns: 260px 1fr;
+    min-height: 100vh;
+}
+
+/* === SIDEBAR (NAVIGASI KIRI) === */
+.sidebar {
+    background-color: var(--darker-bg);
+    border-right: 1px solid var(--tertiary-color);
+    padding: 20px;
+    height: 100vh;
+    position: sticky;
+    top: 0;
+    display: flex;
+    flex-direction: column;
+    transition: left 0.3s ease;
+}
+
+.sidebar-header {
+    margin-bottom: 30px;
+}
+
+.nav-logo {
+   display: flex;
+  align-items: center;
+  text-decoration: none;
+  font-family: "Cormorant Garamond", serif;
+  font-weight: 700;
+  color: var(--light-text);
+}
+.logo-img {
+  height: 40px;
+  width: auto;
+  margin-right: 10px;
+}
+.logo-text {
+  font-size: 22px;
+  letter-spacing: 1px;
+  color: var(--light-text);
+}
+
+.nav-list a {
+    display: block;
+    padding: 14px 18px;
+    color: var(--text-muted);
+    text-decoration: none;
+    border-radius: 8px;
+    margin-bottom: 8px;
+    font-weight: 500;
+    transition: var(--transition);
+}
+
+.nav-list a i {
+    margin-right: 12px;
+    width: 20px;
+    text-align: center;
+}
+
+.nav-list a:hover {
+    background-color: var(--secondary-color);
+    color: var(--light-text);
+}
+
+.nav-list a.active {
+    background-color: var(--accent-color);
+    color: var(--dark-bg);
+    font-weight: 600;
+}
+
+/* === KONTEN UTAMA === */
+.main-content {
+    padding: 24px;
+    background-color: var(--dark-bg);
+}
+
+.admin-header {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    margin-bottom: 24px;
+    padding-bottom: 16px;
+    border-bottom: 1px solid var(--tertiary-color);
+}
+
+.admin-header h1 {
+    margin: 0;
+    font-size: 2.2rem;
+}
+
+.hamburger {
+    display: none;
+    background: none;
+    border: none;
+    color: var(--light-text);
+    font-size: 1.5rem;
+    cursor: pointer;
+}
+
+/* === TOOLBAR MENU (FILTER & TOMBOL) === */
+.menu-toolbar {
+    display: flex;
+    flex-wrap: wrap;
+    justify-content: space-between;
+    align-items: center;
+    gap: 16px;
+    margin-bottom: 24px;
+}
+
+.filter-group {
+    display: flex;
+    align-items: center;
+    gap: 10px;
+}
+
+/* === STYLING FORM (UMUM) === */
+.btn {
+    display: inline-flex;
+    align-items: center;
+    gap: 8px;
+    padding: 10px 18px;
+    border-radius: 5px;
+    text-decoration: none;
+    font-weight: 500;
+    text-transform: uppercase;
+    letter-spacing: 1px;
+    transition: var(--transition);
+    font-size: 14px;
+    cursor: pointer;
+    border: none;
+    font-family: "Montserrat", sans-serif;
+}
+
+.btn-primary {
+    background-color: var(--accent-color);
+    color: var(--dark-bg);
+    font-weight: 600;
+}
+.btn-primary:hover {
+    background-color: var(--accent-hover);
+}
+
+.btn-secondary {
+    background-color: var(--secondary-color);
+    color: var(--light-text);
+    border: 1px solid var(--tertiary-color);
+}
+.btn-secondary:hover {
+    background-color: var(--tertiary-color);
+}
+
+label {
+    display: block;
+    margin-bottom: 8px;
+    font-weight: 500;
+    color: var(--text-muted);
+}
+
+input[type="text"],
+input[type="number"],
+input[type="file"],
+select,
+textarea {
+    width: 100%;
+    padding: 12px 15px;
+    background-color: var(--darker-bg);
+    border: 1px solid var(--tertiary-color);
+    border-radius: 5px;
+    color: var(--light-text);
+    font-family: "Montserrat", sans-serif;
+    font-size: 1rem;
+    box-sizing: border-box; /* Penting untuk padding */
+}
+
+input:focus, select:focus, textarea:focus {
+    outline: none;
+    border-color: var(--accent-color);
+}
+
+/* === GRID MENU ADMIN === */
+.admin-menu-grid {
+    display: grid;
+    grid-template-columns: repeat(auto-fill, minmax(300px, 1fr));
+    gap: 30px;
+}
+
+/* Menggunakan kembali style kartu dari menu.php (telah diekstrak di HTML) */
+/* Kita hanya perlu menambahkan style untuk bagian baru */
+
+.item-meta-admin {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    margin-top: 15px;
+}
+
+.item-category-badge {
+    background-color: var(--tertiary-color);
+    color: var(--text-muted);
+    padding: 4px 10px;
+    border-radius: 20px;
+    font-size: 12px;
+    font-weight: 500;
+}
+
+.item-actions {
+    display: grid;
+    grid-template-columns: 1fr 1fr;
+    gap: 10px;
+    padding: 0 20px 20px; /* Beda dari item-meta */
+}
+
+.btn-edit, .btn-delete {
+    width: 100%;
+    padding: 10px;
+    font-size: 13px;
+    text-align: center;
+    justify-content: center;
+}
+
+.btn-edit {
+    background-color: var(--accent-color);
+    color: var(--dark-bg);
+    font-weight: 600;
+}
+.btn-edit:hover {
+    background-color: var(--accent-hover);
+}
+
+.btn-delete {
+    background-color: #8b0000; /* Merah tua */
+    color: var(--light-text);
+}
+.btn-delete:hover {
+    background-color: #a52a2a;
+}
+
+/* === HALAMAN FORMULIR === */
+.form-container {
+    max-width: 900px;
+    margin: 0 auto;
+}
+
+.form-card {
+    background-color: var(--darker-bg);
+    border: 1px solid var(--tertiary-color);
+    border-radius: 10px;
+    overflow: hidden;
+}
+
+.form-section {
+    padding: 24px 30px;
+    border-bottom: 1px solid var(--tertiary-color);
+}
+.form-section:last-child {
+    border-bottom: none;
+}
+
+.form-section h4 {
+    font-size: 1.5rem;
+    margin-top: 0;
+    margin-bottom: 20px;
+    color: var(--light-text);
+}
+
+.form-group {
+    margin-bottom: 20px;
+}
+
+.form-hint {
+    font-size: 0.9rem;
+    color: var(--text-muted);
+    font-style: italic;
+    margin-bottom: 20px;
+    padding: 10px;
+    background-color: var(--dark-bg);
+    border-radius: 5px;
+}
+
+/* Varian Dinamis */
+#variants-container .variant-row {
+    display: grid;
+    grid-template-columns: 1fr 1fr 1fr auto;
+    gap: 10px;
+    align-items: center;
+    margin-bottom: 10px;
+}
+
+.btn-delete-variant {
+    background: none;
+    border: 1px solid #8b0000;
+    color: #8b0000;
+    padding: 8px 12px;
+    border-radius: 5px;
+    cursor: pointer;
+}
+.btn-delete-variant:hover {
+    background: #8b0000;
+    color: var(--light-text);
+}
+.btn-delete-variant:disabled {
+    border-color: var(--tertiary-color);
+    color: var(--tertiary-color);
+    cursor: not-allowed;
+    background: none;
+}
+
+
+.form-actions {
+    display: flex;
+    justify-content: flex-end;
+    gap: 15px;
+    padding: 24px 30px;
+    background-color: var(--secondary-color);
+}
+
+/* === RESPONSIVE === */
+@media (max-width: 992px) {
+    .admin-layout {
+        grid-template-columns: 1fr;
+    }
+
+    .sidebar {
+        position: fixed;
+        left: -280px; /* Lebar sidebar + 20px padding */
+        width: 260px;
+        z-index: 1000;
+        height: 100vh;
+    }
+
+    .sidebar.show {
+        left: 0;
+    }
+
+    .hamburger {
+        display: block;
+        z-index: 1001; /* Di atas segalanya */
+    }
+    
+    .admin-header h1 {
+        font-size: 1.8rem;
+    }
+    
+    #variants-container .variant-row {
+        grid-template-columns: 1fr; /* Stack di HP */
+    }
+}
+
+@media (max-width: 576px) {
+    .menu-toolbar {
+        flex-direction: column;
+        align-items: stretch;
+    }
+    
+    .form-section {
+        padding: 20px 15px;
+    }
+    
+    .form-actions {
+        padding: 20px 15px;
+        flex-direction: column-reverse;
+    }
+    .form-actions .btn {
+        width: 100%;
+        justify-content: center;
+    }
+}
