@@ -9,6 +9,10 @@
     --tertiary-color: #3d3d3d;
     --text-muted: #a0a0a0;
     --transition: all 0.3s ease;
+
+    /* (BARU) Warna untuk status pesanan */
+    --success-color: #28a745; /* Hijau untuk 'Selesai' */
+    --danger-color: #dc3545;  /* Merah untuk 'Dibatalkan' */
 }
 
 /* :root {

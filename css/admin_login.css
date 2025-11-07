@@ -1,0 +1,149 @@
+/* =========================================
+   CSS KHUSUS UNTUK HALAMAN LOGIN (admin_login.php) 
+=========================================
+*/
+
+html, body {
+    height: 100%;
+}
+
+body {
+    background-color: var(--darker-bg);
+    font-family: "Montserrat", sans-serif;
+    color: var(--light-text);
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    min-height: 100vh;
+    padding: 20px;
+    margin: 0;
+}
+
+.login-container {
+    width: 100%;
+    max-width: 400px;
+    text-align: center;
+}
+
+.login-logo {
+    width: 120px;
+    height: 120px;
+    border-radius: 50%; /* Sesuai gambar logo */
+    margin-bottom: 30px;
+    object-fit: cover;
+    border: 3px solid var(--tertiary-color); /* (FIX 1) Tambahkan border agar tidak menyatu */
+    background-color: var(--dark-bg); /* (FIX 1) Beri bg jika logo punya transparansi */
+}
+
+.login-form {
+    background-color: var(--secondary-color);
+    padding: 30px;
+    border-radius: 10px;
+    border: 1px solid var(--tertiary-color);
+    text-align: left;
+    box-shadow: 0 10px 25px rgba(0, 0, 0, 0.3);
+}
+
+.login-form h2 {
+    font-family: "Cormorant Garamond", serif;
+    font-size: 2rem;
+    text-align: center;
+    margin-top: 0;
+    margin-bottom: 25px;
+    color: var(--light-text);
+}
+
+.form-group {
+    margin-bottom: 20px;
+}
+
+.form-group label {
+    display: block;
+    margin-bottom: 8px;
+    font-weight: 500;
+    color: var(--text-muted);
+    font-size: 0.9rem;
+}
+
+.input-with-icon {
+    position: relative;
+}
+
+.input-with-icon i {
+    position: absolute;
+    left: 15px;
+    top: 50%;
+    transform: translateY(-50%);
+    color: var(--text-muted);
+    font-size: 0.9rem;
+}
+
+/* (BARU) Style untuk ikon toggle password */
+#toggle-password {
+    left: auto; /* Hapus 'left: 15px' dari rule di atas */
+    right: 15px;
+    cursor: pointer;
+    transition: var(--transition);
+}
+#toggle-password:hover {
+    color: var(--accent-color);
+}
+
+
+.login-form input[type="text"],
+.login-form input[type="password"] {
+    width: 100%;
+    padding: 12px 15px 12px 45px; /* Padding kiri untuk ikon */
+    background-color: var(--darker-bg);
+    border: 1px solid var(--tertiary-color);
+    border-radius: 5px;
+    color: var(--light-text);
+    font-family: "Montserrat", sans-serif;
+    font-size: 1rem;
+    transition: var(--transition);
+    box-sizing: border-box; /* (FIX 2) Atasi masalah input meluap */
+}
+
+/* (BARU) Beri padding kanan HANYA pada input password untuk ikon mata */
+.login-form input[type="password"] {
+    padding-right: 45px;
+}
+
+
+.login-form input[type="text"]:focus,
+.login-form input[type="password"]:focus {
+    outline: none;
+    border-color: var(--accent-color);
+    background-color: var(--dark-bg);
+    box-shadow: 0 0 0 3px rgba(218, 173, 57, 0.2);
+}
+
+.btn-login {
+    width: 100%;
+    padding: 12px;
+    font-size: 1rem;
+    font-weight: bold;
+    background-color: var(--accent-color);
+    color: var(--dark-bg);
+    border: none;
+    border-radius: 5px;
+    cursor: pointer;
+    transition: var(--transition);
+    text-transform: uppercase;
+    letter-spacing: 1px;
+    margin-top: 10px;
+}
+
+.btn-login:hover {
+    background-color: var(--accent-hover);
+}
+
+.login-error {
+    background-color: var(--danger-color); /* Menggunakan var dari variable.css */
+    color: var(--light-text);
+    padding: 12px;
+    border-radius: 5px;
+    text-align: center;
+    margin-bottom: 20px;
+    font-size: 0.9rem;
+}
