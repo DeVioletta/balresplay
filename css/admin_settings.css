@@ -1,0 +1,301 @@
+/* =========================================
+   CSS KHUSUS UNTUK HALAMAN PENGATURAN (admin_settings.php) 
+=========================================
+*/
+
+.admin-toolbar {
+    display: flex;
+    justify-content: flex-end;
+    margin-bottom: 24px;
+}
+
+/* --- Container Tabel Responsif --- */
+.table-container {
+    overflow-x: auto; /* Kunci untuk responsif tabel */
+    background-color: var(--secondary-color);
+    border-radius: 10px;
+    border: 1px solid var(--tertiary-color);
+}
+
+table {
+    width: 100%;
+    min-width: 600px; /* Lebar minimum agar tidak terlalu sempit */
+    border-collapse: collapse;
+}
+
+thead tr {
+    border-bottom: 2px solid var(--accent-color);
+}
+
+th {
+    padding: 15px;
+    text-align: left;
+    font-size: 1rem;
+    color: var(--light-text);
+    background-color: var(--darker-bg);
+}
+th:first-child { border-top-left-radius: 9px; }
+th:last-child { border-top-right-radius: 9px; }
+
+tbody tr {
+    transition: var(--transition);
+    border-bottom: 1px solid var(--tertiary-color);
+}
+tbody tr:last-child {
+    border-bottom: none;
+}
+
+tbody tr:hover {
+    background-color: var(--tertiary-color);
+}
+
+td {
+    padding: 15px;
+    color: var(--text-muted);
+}
+td[data-label="Username"] {
+    color: var(--light-text);
+    font-weight: 500;
+}
+
+/* --- Status Badges --- */
+.status-badge {
+    padding: 5px 12px;
+    border-radius: 15px;
+    font-size: 12px;
+    font-weight: 600;
+    color: var(--light-text);
+}
+
+.status-active {
+    background-color: var(--success-color);
+}
+
+.status-inactive {
+    background-color: var(--danger-color);
+}
+
+/* --- Tombol Aksi di Tabel --- */
+td[data-label="Tindakan"] {
+    display: flex;
+    gap: 10px;
+}
+
+.btn-edit-sm, .btn-delete-sm {
+    padding: 6px 12px;
+    font-size: 12px;
+    border-radius: 5px;
+    border: none;
+    cursor: pointer;
+    transition: var(--transition);
+    display: inline-flex;
+    align-items: center;
+    gap: 5px;
+}
+
+.btn-edit-sm {
+    background-color: var(--accent-color);
+    color: var(--dark-bg);
+    font-weight: 600;
+}
+.btn-edit-sm:hover { background-color: var(--accent-hover); }
+
+.btn-delete-sm {
+    background-color: var(--danger-color);
+    color: var(--light-text);
+}
+.btn-delete-sm:hover { background-color: #a52a2a; }
+
+
+/* --- Modal Styling --- */
+.modal-overlay {
+    display: none; /* Sembunyi by default */
+    position: fixed;
+    top: 0;
+    left: 0;
+    width: 100%;
+    height: 100%;
+    background: rgba(0, 0, 0, 0.7);
+    backdrop-filter: blur(4px);
+    z-index: 2000;
+    align-items: center;
+    justify-content: center;
+    opacity: 0;
+    transition: opacity 0.3s ease;
+}
+.modal-overlay.show {
+    display: flex;
+    opacity: 1;
+}
+
+.modal-content {
+    background: var(--secondary-color);
+    width: 90%;
+    max-width: 500px;
+    border-radius: 10px;
+    border: 1px solid var(--tertiary-color);
+    box-shadow: 0 10px 30px rgba(0,0,0,0.5);
+    position: relative;
+    transform: scale(0.95);
+    transition: transform 0.3s ease;
+}
+.modal-overlay.show .modal-content {
+    transform: scale(1);
+}
+
+.modal-header {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    padding: 20px 25px;
+    border-bottom: 1px solid var(--tertiary-color);
+}
+.modal-header h3 {
+    margin: 0;
+    font-size: 1.5rem;
+}
+.modal-close {
+    font-size: 1.8rem;
+    color: var(--text-muted);
+    cursor: pointer;
+    transition: var(--transition);
+}
+.modal-close:hover { color: var(--light-text); }
+
+.modal-body {
+    padding: 25px;
+}
+.modal-body .form-group {
+    margin-bottom: 20px;
+}
+/* Menggunakan style input/select dari admin_menu.css */
+.form-control {
+    width: 100%;
+    padding: 12px 15px;
+    background-color: var(--darker-bg);
+    border: 1px solid var(--tertiary-color);
+    border-radius: 5px;
+    color: var(--light-text);
+    font-family: "Montserrat", sans-serif;
+    font-size: 1rem;
+    box-sizing: border-box;
+}
+.form-control:focus {
+    outline: none;
+    border-color: var(--accent-color);
+}
+.modal-body label {
+    display: block;
+    margin-bottom: 8px;
+    font-weight: 500;
+    color: var(--text-muted);
+}
+.modal-body small {
+    display: block;
+    font-size: 0.8rem;
+    color: var(--text-muted);
+    margin: -5px 0 10px;
+}
+/* Style untuk input password di modal */
+.modal-body .input-with-icon {
+    position: relative;
+}
+.modal-body .input-with-icon i {
+    position: absolute;
+    top: 50%;
+    transform: translateY(-50%);
+    color: var(--text-muted);
+    font-size: 0.9rem;
+}
+.modal-body .input-with-icon .fa-lock { left: 15px; }
+.modal-body .input-with-icon .fa-eye,
+.modal-body .input-with-icon .fa-eye-slash {
+    right: 15px;
+    cursor: pointer;
+    transition: var(--transition);
+}
+.modal-body .input-with-icon .fa-eye:hover,
+.modal-body .input-with-icon .fa-eye-slash:hover {
+    color: var(--accent-color);
+}
+
+.modal-body input[type="password"].form-control {
+    padding-left: 45px;
+    padding-right: 45px;
+}
+.modal-body input[type="text"].form-control {
+    padding-left: 15px;
+}
+#username.form-control { padding-left: 15px; } /* Override anomali */
+
+
+.modal-footer {
+    display: flex;
+    justify-content: flex-end;
+    gap: 10px;
+    padding: 20px 25px;
+    border-top: 1px solid var(--tertiary-color);
+}
+
+
+/* --- Responsive Tabel (Mobile) --- */
+@media (max-width: 768px) {
+    .table-container {
+        border-radius: 0;
+    }
+    table {
+        min-width: auto;
+    }
+    
+    /* Sembunyikan header tabel, tapi tetap aksesibel */
+    thead {
+        border: none;
+        clip: rect(0 0 0 0);
+        height: 1px;
+        margin: -1px;
+        overflow: hidden;
+        padding: 0;
+        position: absolute;
+        width: 1px;
+    }
+    
+    tbody tr {
+        display: block;
+        margin-bottom: 15px;
+        border: 1px solid var(--tertiary-color);
+        border-radius: 8px;
+        overflow: hidden;
+        background-color: var(--secondary-color);
+    }
+    
+    td {
+        display: block;
+        text-align: right; /* Sejajarkan nilai ke kanan */
+        padding: 12px 15px;
+        border-bottom: 1px dashed var(--tertiary-color);
+    }
+    td:last-child {
+        border-bottom: none;
+    }
+    
+    /* Tambahkan label di kiri */
+    td::before {
+        content: attr(data-label);
+        float: left;
+        font-weight: bold;
+        color: var(--light-text);
+        text-transform: uppercase;
+        font-size: 0.8rem;
+    }
+
+    /* Khususkan tombol */
+    td[data-label="Tindakan"] {
+        display: flex;
+        justify-content: flex-end;
+        align-items: center;
+    }
+    td[data-label="Tindakan"]::before {
+        /* Sembunyikan label untuk tombol */
+        display: none;
+    }
+}

@@ -39,7 +39,7 @@
                 <a href="#"><i class="fas fa-tachometer-alt"></i> Dashboard</a>
                 <a href="admin_menu.php" class="active"><i class="fas fa-utensils"></i> Menu Cafe</a>
                 <a href="admin_orders.php"><i class="fas fa-receipt"></i> Pesanan</a>
-                <a href="#"><i class="fas fa-cog"></i> Pengaturan</a>
+                <a href="admin_settings.php"><i class="fas fa-cog"></i> Pengaturan</a>
             </nav>
         </aside>
 
