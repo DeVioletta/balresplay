@@ -1,0 +1,143 @@
+/* =========================================
+ CSS KHUSUS UNTUK FORM ADMIN (admin_form_menu.php) 
+=========================================
+*/
+
+/* === (BARU) STYLING PREVIEW GAMBAR === */
+.image-preview-container {
+    width: 100%;
+    max-width: 400px;
+    margin-top: 15px;
+    border: 1px solid var(--tertiary-color);
+    border-radius: 5px;
+    overflow: hidden;
+    background-color: var(--dark-bg);
+}
+
+#image_preview {
+    width: 100%;
+    height: auto;
+    display: block;
+    aspect-ratio: 16 / 9;
+    object-fit: cover;
+}
+
+#product_image {
+    /* Style input file */
+    padding: 0;
+}
+
+#product_image::file-selector-button {
+    padding: 12px 15px;
+    background-color: var(--secondary-color);
+    border: none;
+    color: var(--light-text);
+    cursor: pointer;
+    margin-right: 15px;
+    transition: var(--transition);
+}
+
+#product_image::file-selector-button:hover {
+    background-color: var(--tertiary-color);
+}
+
+/* === HALAMAN FORMULIR === */
+.form-container {
+    max-width: 900px;
+    margin: 0 auto;
+}
+
+.form-card {
+    background-color: var(--darker-bg);
+    border: 1px solid var(--tertiary-color);
+    border-radius: 10px;
+    overflow: hidden;
+}
+
+.form-section {
+    padding: 24px 30px;
+    border-bottom: 1px solid var(--tertiary-color);
+}
+.form-section:last-child {
+    border-bottom: none;
+}
+
+.form-section h4 {
+    font-size: 1.5rem;
+    margin-top: 0;
+    margin-bottom: 20px;
+    color: var(--light-text);
+}
+
+.form-group {
+    margin-bottom: 20px;
+}
+
+.form-hint {
+    font-size: 0.9rem;
+    color: var(--text-muted);
+    font-style: italic;
+    margin-bottom: 20px;
+    padding: 10px;
+    background-color: var(--dark-bg);
+    border-radius: 5px;
+}
+
+/* Varian Dinamis */
+#variants-container .variant-row {
+    display: grid;
+    grid-template-columns: 1fr 1fr 1fr auto;
+    gap: 10px;
+    align-items: center;
+    margin-bottom: 10px;
+}
+
+.btn-delete-variant {
+    background: none;
+    border: 1px solid #8b0000;
+    color: #8b0000;
+    padding: 8px 12px;
+    border-radius: 5px;
+    cursor: pointer;
+}
+.btn-delete-variant:hover {
+    background: #8b0000;
+    color: var(--light-text);
+}
+.btn-delete-variant:disabled {
+    border-color: var(--tertiary-color);
+    color: var(--tertiary-color);
+    cursor: not-allowed;
+    background: none;
+}
+
+
+.form-actions {
+    display: flex;
+    justify-content: flex-end;
+    gap: 15px;
+    padding: 24px 30px;
+    background-color: var(--secondary-color);
+}
+
+/* === RESPONSIVE UNTUK FORM === */
+@media (max-width: 992px) {
+    #variants-container .variant-row {
+        grid-template-columns: 1fr; /* Stack di HP */
+    }
+}
+
+@media (max-width: 576px) {
+    .form-section {
+        padding: 20px 15px;
+    }
+    
+    .form-actions {
+        padding: 20px 15px;
+        flex-direction: column-reverse;
+    }
+    .form-actions .btn {
+        width: 100%;
+        justify-content: center;
+    }
+}

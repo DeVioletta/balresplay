@@ -1,0 +1,376 @@
+/* Menggunakan variabel dari /css/variable.css */
+
+/* === STRUKTUR LAYOUT UTAMA === */
+body {
+    background-color: var(--dark-bg);
+    color: var(--light-text);
+    font-family: "Montserrat", sans-serif;
+    margin: 0;
+}
+
+h1, h2, h3, h4, h5 {
+    font-family: "Cormorant Garamond", serif;
+    font-weight: 600;
+    line-height: 1.2;
+}
+
+.admin-layout {
+    display: grid;
+    grid-template-columns: 260px 1fr;
+    min-height: 100vh;
+}
+
+/* === SIDEBAR (NAVIGASI KIRI) === */
+.sidebar {
+    background-color: var(--darker-bg);
+    border-right: 1px solid var(--tertiary-color);
+    padding: 20px;
+    height: 100vh;
+    position: sticky;
+    top: 0;
+    display: flex;
+    flex-direction: column;
+    transition: left 0.3s ease;
+}
+
+.sidebar-header {
+    margin-bottom: 30px;
+}
+
+.nav-logo {
+   display: flex;
+  align-items: center;
+  text-decoration: none;
+  font-family: "Cormorant Garamond", serif;
+  font-weight: 700;
+  color: var(--light-text);
+}
+.logo-img {
+  height: 40px;
+  width: auto;
+  margin-right: 10px;
+}
+.logo-text {
+  font-size: 22px;
+  letter-spacing: 1px;
+  color: var(--light-text);
+}
+
+.nav-list a {
+    display: block;
+    padding: 14px 18px;
+    color: var(--text-muted);
+    text-decoration: none;
+    border-radius: 8px;
+    margin-bottom: 8px;
+    font-weight: 500;
+    transition: var(--transition);
+}
+
+.nav-list a i {
+    margin-right: 12px;
+    width: 20px;
+    text-align: center;
+}
+
+.nav-list a:hover {
+    background-color: var(--secondary-color);
+    color: var(--light-text);
+}
+
+.nav-list a.active {
+    background-color: var(--accent-color);
+    color: var(--dark-bg);
+    font-weight: 600;
+}
+
+/* === KONTEN UTAMA === */
+.main-content {
+    padding: 24px;
+    background-color: var(--dark-bg);
+}
+
+.admin-header {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    margin-bottom: 24px;
+    padding-bottom: 16px;
+    border-bottom: 1px solid var(--tertiary-color);
+}
+
+.admin-header h1 {
+    margin: 0;
+    font-size: 2.2rem;
+}
+
+.hamburger {
+    display: none;
+    background: none;
+    border: none;
+    color: var(--light-text);
+    font-size: 1.5rem;
+    cursor: pointer;
+}
+
+/* === TOOLBAR MENU (FILTER & TOMBOL) === */
+.menu-toolbar {
+    display: flex;
+    flex-wrap: wrap;
+    justify-content: space-between;
+    align-items: center;
+    gap: 16px;
+    margin-bottom: 24px;
+}
+
+.filter-group {
+    display: flex;
+    align-items: center;
+    gap: 10px;
+}
+
+/* === STYLING FORM (UMUM) === */
+.btn {
+    display: inline-flex;
+    align-items: center;
+    gap: 8px;
+    padding: 10px 18px;
+    border-radius: 5px;
+    text-decoration: none;
+    font-weight: 500;
+    text-transform: uppercase;
+    letter-spacing: 1px;
+    transition: var(--transition);
+    font-size: 14px;
+    cursor: pointer;
+    border: none;
+    font-family: "Montserrat", sans-serif;
+}
+
+.btn-primary {
+    background-color: var(--accent-color);
+    color: var(--dark-bg);
+    font-weight: 600;
+}
+.btn-primary:hover {
+    background-color: var(--accent-hover);
+}
+
+.btn-secondary {
+    background-color: var(--secondary-color);
+    color: var(--light-text);
+    border: 1px solid var(--tertiary-color);
+}
+.btn-secondary:hover {
+    background-color: var(--tertiary-color);
+}
+
+label {
+    display: block;
+    margin-bottom: 8px;
+    font-weight: 500;
+    color: var(--text-muted);
+}
+
+input[type="text"],
+input[type="number"],
+input[type="file"],
+select,
+textarea {
+    width: 100%;
+    padding: 12px 15px;
+    background-color: var(--darker-bg);
+    border: 1px solid var(--tertiary-color);
+    border-radius: 5px;
+    color: var(--light-text);
+    font-family: "Montserrat", sans-serif;
+    font-size: 1rem;
+    box-sizing: border-box; /* Penting untuk padding */
+}
+
+input:focus, select:focus, textarea:focus {
+    outline: none;
+    border-color: var(--accent-color);
+}
+
+/* === (BARU) STYLE KARTU MENU (Dipindah dari menu2.css) === */
+.menu-item {
+    background: var(--secondary-color);
+    border-radius: 10px;
+    overflow: hidden;
+    transition: var(--transition);
+    box-shadow: 0 5px 15px rgba(0, 0, 0, 0.2);
+    display: flex;
+    flex-direction: column;
+}
+.menu-item:hover {
+    transform: translateY(-5px);
+    box-shadow: 0 10px 25px rgba(0, 0, 0, 0.4);
+}
+.item-image {
+    height: 200px;
+    overflow: hidden;
+    position: relative;
+}
+.item-image img {
+    width: 100%;
+    height: 100%;
+    object-fit: cover;
+    transition: var(--transition);
+}
+.menu-item:hover .item-image img {
+    transform: scale(1.1);
+}
+.item-info {
+    padding: 20px;
+    display: flex;
+    flex-direction: column;
+    flex-grow: 1; /* Membuat info item memenuhi sisa ruang */
+}
+.item-info h3 {
+    font-size: 1.5rem;
+    margin-bottom: 10px;
+    color: var(--light-text);
+}
+.item-info p {
+    color: var(--text-muted);
+    margin-bottom: 15px;
+    font-size: 14px;
+    line-height: 1.5;
+    flex-grow: 1; /* Mendorong meta ke bawah */
+}
+.item-price {
+    font-size: 1.3rem;
+    font-weight: 700;
+    color: var(--accent-color);
+}
+/* === (AKHIR) STYLE KARTU MENU === */
+
+
+/* === GRID MENU ADMIN === */
+.admin-menu-grid {
+    display: grid;
+    grid-template-columns: repeat(auto-fill, minmax(300px, 1fr));
+    gap: 30px;
+}
+
+/* Menggunakan kembali style kartu dari menu.php (telah diekstrak di HTML) */
+/* Kita hanya perlu menambahkan style untuk bagian baru */
+
+.item-meta-admin {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    margin-top: 15px;
+}
+
+.item-category-badge {
+    background-color: var(--tertiary-color);
+    color: var(--text-muted);
+    padding: 4px 10px;
+    border-radius: 20px;
+    font-size: 12px;
+    font-weight: 500;
+}
+
+.item-actions {
+    display: grid;
+    grid-template-columns: 1fr 1fr;
+    gap: 30px; /* <- Diubah dari 10px menjadi 15px */
+    padding: 0 20px 20px; /* Beda dari item-meta */
+}
+
+.btn-edit, .btn-delete {
+    width: 100%;
+    padding: 10px;
+    font-size: 13px;
+    text-align: center;
+    justify-content: center;
+}
+
+.btn-edit {
+    background-color: var(--accent-color);
+    color: var(--dark-bg);
+    font-weight: 600;
+}
+.btn-edit:hover {
+    background-color: var(--accent-hover);
+}
+
+.btn-delete {
+    background-color: #8b0000; /* Merah tua */
+    color: var(--light-text);
+}
+.btn-delete:hover {
+    background-color: #a52a2a;
+}
+
+/* === (DIHAPUS) STYLING PREVIEW GAMBAR === */
+/* (Blok ini dipindahkan ke form.css) */
+
+/* === (DIHAPUS) HALAMAN FORMULIR === */
+/* (Blok ini dipindahkan ke form.css) */
+
+/* === RESPONSIVE === */
+@media (max-width: 992px) {
+    .admin-layout {
+        grid-template-columns: 1fr;
+    }
+
+    .sidebar {
+        position: fixed;
+        left: -280px; /* Lebar sidebar + 20px padding */
+        width: 260px;
+        z-index: 1000;
+        height: 100vh;
+    }
+
+    .sidebar.show {
+        left: 0;
+    }
+
+    .hamburger {
+        display: block;
+        z-index: 1001; /* Di atas segalanya */
+    }
+    
+    .admin-header h1 {
+        font-size: 1.8rem;
+    }
+    
+    /* (BARU) LOGIKA SCROLL-X GRID MENU ADMIN */
+    .admin-menu-grid {
+        display: flex;
+        flex-wrap: nowrap;
+        overflow-x: auto;
+        gap: 15px;
+        padding: 20px 10px;
+        scroll-snap-type: x mandatory;
+        /* Hapus style grid */
+        grid-template-columns: none; 
+    }
+
+    .admin-menu-grid .menu-item {
+        flex: 0 0 90%; /* <- (DISESUAIKAN) Lebar kartu 90% */
+        scroll-snap-align: start;
+        width: auto; /* Override jika ada */
+    }
+
+    /* Sembunyikan scrollbar */
+    .admin-menu-grid::-webkit-scrollbar { display: none; }
+    .admin-menu-grid { -ms-overflow-style: none; scrollbar-width: none; }
+    /* (AKHIR) LOGIKA SCROLL-X */
+
+    /* (DIHAPUS) RESPONSIVE FORM */
+    /* (Blok #variants-container dipindahkan ke form.css) */
+}
+
+@media (max-width: 576px) {
+    .menu-toolbar {
+        flex-direction: column;
+        align-items: stretch;
+    }
+    
+    /* (DIHAPUS) RESPONSIVE FORM */
+    /* (Blok .form-section dan .form-actions dipindahkan ke form.css) */
+}

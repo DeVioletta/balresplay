@@ -4,7 +4,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Éclat | Premium Menu</title>
+    <title>BalResplay | Menu</title>
     <link rel="stylesheet" href="css/variable.css">
     <link rel="stylesheet" href="css/header.css">
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
@@ -19,6 +19,16 @@
                 <img src="images/logo_fix.png" alt="BalResplay Logo" class="logo-img">
                 <span class="logo-text">BalResplay</span>
             </a>
+            <div class="nav-menu">
+                <!-- IKON STATUS PESANAN BARU -->
+                <div class="order-status-icon" id="order-status-icon" style="display: none;">
+                    <i class="fas fa-receipt"></i>
+                </div>
+                <div class="cart-icon" id="cart-icon">
+                    <i class="fas fa-shopping-cart"></i>
+                    <span class="cart-count" id="cart-count">0</span>
+                </div>
+            </div>
             <div class="hamburger">
                 <span class="bar"></span>
                 <span class="bar"></span>
