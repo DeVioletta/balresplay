@@ -48,6 +48,11 @@ redirectIfNotLoggedIn('admin_login.php');
                 <a href="admin_orders.php"><i class="fas fa-receipt"></i> Pesanan</a>
                 <a href="admin_settings.php"><i class="fas fa-cog"></i> Pengaturan</a>
             </nav>
+            <div class="sidebar-footer">
+                <a href="actions/handle_logout.php" class="logout-link">
+                    <i class="fas fa-sign-out-alt"></i> Logout
+                </a>
+            </div>
         </aside>
 
         <!-- ===== MAIN CONTENT ===== -->
