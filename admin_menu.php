@@ -5,6 +5,8 @@ redirectIfNotLoggedIn('admin_login.php');
 
 // (BARU) Ambil semua data produk dari database
 $products = getAllProductsWithVariants($db);
+// (BARU) Ambil semua kategori unik untuk filter
+$categories = getAllCategories($db);
 ?>
 
 
@@ -53,15 +55,14 @@ $products = getAllProductsWithVariants($db);
             <div class="menu-toolbar">
                 <div class="filter-group">
                     <label for="category-filter">Filter Kategori:</label>
+                    <!-- (DIPERBARUI) Select filter sekarang dinamis -->
                     <select id="category-filter" name="kategori">
                         <option value="all">Semua Kategori</option>
-                        <option value="rice">Rice</option>
-                        <option value="noodles">Noodles</option>
-                        <option value="lite-easy">Lite & Easy</option>
-                        <option value="coffee">Coffee</option>
-                        <option value="tea">Tea Series</option>
-                        <option value="non-coffee">Non Coffee</option>
-                        <option value="signature">Signature Mocktail</option>
+                        <?php foreach ($categories as $cat): ?>
+                            <option value="<?php echo htmlspecialchars($cat['category']); ?>">
+                                <?php echo htmlspecialchars($cat['category']); ?>
+                            </option>
+                        <?php endforeach; ?>
                     </select>
                 </div>
                 <a href="admin_form_menu.php" class="btn btn-primary">
@@ -81,7 +82,11 @@ $products = getAllProductsWithVariants($db);
                                 ? htmlspecialchars($product['image_url']) 
                                 : 'https://placehold.co/300x300/e8e4d8/5c6e58?text=' . urlencode($product['name']);
                         ?>
-                        <div class="menu-item" data-product-id="<?php echo $product['product_id']; ?>">
+                        <!-- (DIPERBARUI) Menambahkan data-category untuk JS -->
+                        <div class="menu-item" 
+                             data-product-id="<?php echo $product['product_id']; ?>" 
+                             data-category="<?php echo htmlspecialchars($product['category']); ?>">
+                            
                             <div class="item-image"><img src="<?php echo $image_url; ?>" alt="<?php echo htmlspecialchars($product['name']); ?>"></div>
                             <div class="item-info">
                                 <h3><?php echo htmlspecialchars($product['name']); ?></h3>
@@ -123,6 +128,27 @@ $products = getAllProductsWithVariants($db);
                 sidebar.classList.remove('show');
             });
 
+            // (LOGIKA BARU) Logika untuk filter kategori
+            const categoryFilter = document.getElementById('category-filter');
+            if (categoryFilter) {
+                categoryFilter.addEventListener('change', (e) => {
+                    const selectedCategory = e.currentTarget.value;
+                    const allItems = document.querySelectorAll('.admin-menu-grid .menu-item');
+
+                    allItems.forEach(item => {
+                        const itemCategory = item.dataset.category;
+                        
+                        // Cek jika item harus ditampilkan
+                        if (selectedCategory === 'all' || itemCategory === selectedCategory) {
+                            item.style.display = 'flex'; // Gunakan 'flex' karena .menu-item adalah flexbox
+                        } else {
+                            item.style.display = 'none'; // Sembunyikan item
+                        }
+                    });
+                });
+            }
+
+
             // Logika untuk tombol hapus (untuk integrasi backend)
             document.querySelectorAll('.btn-delete').forEach(button => {
                 button.addEventListener('click', (e) => {
@@ -140,9 +166,6 @@ $products = getAllProductsWithVariants($db);
                     }
                 });
             });
-
-            // Menyesuaikan style kartu dari menu2.css agar tidak bentrok
-            // (BLOK INI DIHAPUS KARENA STYLE SUDAH DIPINDAH KE ADMIN.CSS)
         });
     </script>
 </body>

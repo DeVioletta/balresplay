@@ -11,7 +11,7 @@ define('DB_USER', 'root');
 define('DB_PASS', '');
 define('DB_NAME', 'balresplay'); // Ganti dengan nama database Anda
 
-// --- KONEKSI DATABASE (MySQLi) ---
+// --- KONESI DATABASE (MySQLi) ---
 $db = new mysqli(DB_HOST, DB_USER, DB_PASS, DB_NAME);
 
 // Cek koneksi
@@ -199,6 +199,21 @@ function getAllProductsWithVariants($db) {
     }
     return $products;
 }
+
+/**
+ * (FUNGSI BARU) Mengambil semua kategori unik dari tabel products.
+ *
+ * @param mysqli $db
+ * @return array Daftar kategori
+ */
+function getAllCategories($db) {
+    $sql = "SELECT DISTINCT category FROM products ORDER BY category ASC";
+    $result = $db->query($sql);
+    if (!$result) return [];
+    // Menggunakan fetch_all untuk mendapatkan semua baris sebagai array
+    return $result->fetch_all(MYSQLI_ASSOC);
+}
+
 
 /**
  * Menyimpan produk baru ke tabel 'products'.
