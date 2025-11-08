@@ -28,7 +28,7 @@
         
         <img src="images/logo_fix.png" alt="BalResplay Logo" class="login-logo">
 
-        <form action="handle_login.php" method="POST" class="login-form">
+        <form action="actions/handle_login.php" method="POST" class="login-form">
             <h2>Login</h2>
 
             <?php if ($error_message): ?>

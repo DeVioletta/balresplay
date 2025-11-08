@@ -1,4 +1,11 @@
 <?php
+require_once __DIR__ . '/config/database.php';
+startSecureSession();
+redirectIfNotLoggedIn('admin_login.php');
+?>
+
+
+<?php
     // --- LOGIKA UNTUK BACKEND (CONTOH) ---
     // Cek apakah ada parameter 'id' di URL
     $is_edit_mode = isset($_GET['id']);

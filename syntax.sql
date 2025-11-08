@@ -1,4 +1,17 @@
 -- =================================================================
+-- TABEL MANAJEMEN ADMIN (UNTUK LOGIN)
+-- =================================================================
+
+CREATE TABLE admin_users (
+  user_id INT AUTO_INCREMENT PRIMARY KEY,
+  username VARCHAR(100) NOT NULL UNIQUE,
+  password_hash VARCHAR(255) NOT NULL,
+  role ENUM('Super Admin', 'Kasir', 'Dapur') NOT NULL,
+  status TINYINT(1) NOT NULL DEFAULT 1 COMMENT '1=Aktif, 0=Nonaktif',
+  created_at DATETIME DEFAULT CURRENT_TIMESTAMP
+);
+
+-- =================================================================
 -- TABEL MENU
 -- =================================================================
 
@@ -51,4 +64,16 @@ CREATE TABLE order_items (
     price_per_item DECIMAL(10, 2) NOT NULL,
     FOREIGN KEY (order_id) REFERENCES orders(order_id) ON DELETE CASCADE,
     FOREIGN KEY (variant_id) REFERENCES product_variants(variant_id) ON DELETE RESTRICT
+);
+
+-- =================================================================
+-- DATA CONTOH UNTUK LOGIN ADMIN (PASSWORD: admin123)
+-- =================================================================
+
+INSERT INTO admin_users (username, password_hash, role, status) 
+VALUES (
+  'admin_super', 
+  '$2y$10$f/p.g.pDqO1bOBC29x8w0u6R1JOA1Pz4fsf8MABTfVSr/clL.i1yK', 
+  'Super Admin', 
+  1
 );

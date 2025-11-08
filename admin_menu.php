@@ -1,3 +1,10 @@
+<?php
+require_once __DIR__ . '/config/database.php';
+startSecureSession();
+redirectIfNotLoggedIn('admin_login.php');
+?>
+
+
 <!DOCTYPE html>
 <html lang="id">
 <head>
