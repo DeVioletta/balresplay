@@ -172,7 +172,10 @@ if (isset($_GET['success'])) {
                     
                     <div class="form-group">
                         <label for="username">Username</label>
-                        <input type="text" id="username" name="username" class="form-control" required>
+                        <div class="input-with-icon">
+                            <i class="fas fa-user"></i>
+                            <input type="text" id="username" name="username" class="form-control" required>
+                        </div>
                     </div>
                     <div class="form-group">
                         <label for="password">Password</label>
