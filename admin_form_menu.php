@@ -4,7 +4,6 @@ startSecureSession();
 redirectIfNotLoggedIn('admin_login.php');
 ?>
 
-
 <?php
     // --- LOGIKA UNTUK BACKEND (CONTOH) ---
     // Cek apakah ada parameter 'id' di URL
@@ -23,18 +22,41 @@ redirectIfNotLoggedIn('admin_login.php');
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>Admin | <?php echo $page_title; ?></title>
-    <!-- CSS Utama -->
     <link rel="stylesheet" href="css/variable.css">
     <link rel="stylesheet" href="css/admin_menu.css">
-    <link rel="stylesheet" href="css/menu_form.css"> <!-- (LINK BARU DITAMBAHKAN) -->
-    <!-- Font & Ikon -->
+    <link rel="stylesheet" href="css/menu_form.css">
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
     <link href="https://fonts.googleapis.com/css2?family=Cormorant+Garamond:wght@300;400;600;700&family=Montserrat:wght@300;400;500&display=swap" rel="stylesheet">
+    
+    <!-- (BARU) Style untuk pesan error, diambil dari admin_settings.css -->
+    <style>
+        .admin-message {
+            padding: 15px;
+            border-radius: 5px;
+            margin-bottom: 20px;
+            font-weight: 500;
+        }
+        .admin-message.error {
+            background-color: var(--danger-color);
+            color: var(--light-text);
+        }
+        
+        /* (BARU) Override CSS grid untuk baris varian karena 1 kolom dihapus */
+        #variants-container .variant-row {
+            /* Original: 1fr 1fr 1fr auto */
+            grid-template-columns: 1fr 1fr auto; /* (DIPERBARUI) Menghapus 1fr untuk input kode */
+        }
+        /* (BARU) Perbaikan layout di mobile */
+        @media (max-width: 768px) {
+            #variants-container .variant-row {
+                grid-template-columns: 1fr; /* Tetap 1 kolom */
+            }
+        }
+    </style>
 </head>
 <body>
     
     <div class="admin-layout">
-        <!-- ===== SIDEBAR ===== -->
         <aside class="sidebar" id="sidebar">
             <div class="sidebar-header">
                 <a href="index.php" class="nav-logo">
@@ -55,9 +77,7 @@ redirectIfNotLoggedIn('admin_login.php');
             </div>
         </aside>
 
-        <!-- ===== MAIN CONTENT ===== -->
         <main class="main-content">
-            <!-- Header Konten -->
             <header class="admin-header">
                 <button class="hamburger" id="hamburger">
                     <i class="fas fa-bars"></i>
@@ -65,19 +85,16 @@ redirectIfNotLoggedIn('admin_login.php');
                 <h1><?php echo $page_title; ?></h1>
             </header>
 
-            <!-- Formulir Menu -->
             <div class="form-container">
-                <!-- 
-                    Form akan mengirim data ke script PHP (misal: save_menu.php)
-                    Gunakan 'enctype="multipart/form-data"' jika ingin upload gambar
-                -->
-                <form action="save_menu.php" method="POST" class="form-card" enctype="multipart/form-data">
-                    <!-- ID Produk (tersembunyi) untuk mode Edit -->
+                
+                <!-- (BARU) Kontainer untuk pesan error -->
+                <div id="form-error-message" class="admin-message error" style="display: none;"></div>
+
+                <form action="actions/save_menu.php" method="POST" class="form-card" enctype="multipart/form-data" id="menu-form">
                     <?php if ($is_edit_mode): ?>
                         <input type="hidden" name="product_id" value="<?php echo $product_id; ?>">
                     <?php endif; ?>
 
-                    <!-- Informasi Dasar Produk -->
                     <div class="form-section">
                         <h4>Informasi Dasar</h4>
                         <div class="form-group">
@@ -106,31 +123,25 @@ redirectIfNotLoggedIn('admin_login.php');
                             <input type="text" id="new_category" name="new_category" placeholder="cth: Pastry">
                         </div>
                         <div class="form-group">
-                            <label for="product_image">Upload Gambar</label>
+                            <label for="product_image">Upload Gambar (Opsional)</label>
                             <input type="file" id="product_image" name="product_image" accept="image/*">
                             <div class="image-preview-container">
                                 <img id="image_preview" src="https://placehold.co/300x200/2c2c2c/a0a0a0?text=Preview+Gambar" alt="Preview Gambar">
+
                             </div>
                         </div>
                     </div>
 
-                    <!-- Varian dan Harga -->
                     <div class="form-section">
                         <h4>Harga & Varian</h4>
                         <p class="form-hint">
                             Tambahkan setidaknya satu varian. Untuk menu tanpa varian (seperti Nasi Goreng), biarkan "Nama Varian" kosong dan isi harganya.
                         </p>
                         <div id="variants-container">
-                            <!-- 
-                                Baris varian akan ditambahkan di sini oleh JS.
-                                Backend (PHP) akan menerima ini sebagai array, cth:
-                                name="variants[0][name]", name="variants[0][price]"
-                                name="variants[1][name]", name="variants[1][price]"
-                            -->
+                            <!-- (DIPERBARUI) Input 'product_code' dihapus -->
                             <div class="variant-row">
                                 <input type="text" name="variants[0][name]" placeholder="Nama Varian (cth: Hot / Ice)">
                                 <input type="number" name="variants[0][price]" placeholder="Harga (cth: 20000)" required>
-                                <input type="text" name="variants[0][code]" placeholder="Kode Produk (cth: C1-HOT)" required>
                                 <button type="button" class="btn btn-delete-variant" disabled>
                                     <i class="fas fa-trash"></i>
                                 </button>
@@ -141,7 +152,6 @@ redirectIfNotLoggedIn('admin_login.php');
                         </button>
                     </div>
 
-                    <!-- Tombol Aksi -->
                     <div class="form-actions">
                         <a href="admin_menu.php" class="btn btn-secondary">Batal</a>
                         <button type="submit" class="btn btn-primary">
@@ -152,7 +162,6 @@ redirectIfNotLoggedIn('admin_login.php');
             </div>
         </main>
         
-        <!-- (BARU) Overlay untuk menutup sidebar di mobile -->
         <div class="sidebar-overlay" id="sidebar-overlay"></div>
     </div>
 
@@ -161,13 +170,12 @@ redirectIfNotLoggedIn('admin_login.php');
             // --- Logika Sidebar Hamburger ---
             const hamburger = document.getElementById('hamburger');
             const sidebar = document.getElementById('sidebar');
-            const overlay = document.getElementById('sidebar-overlay'); // (BARU)
+            const overlay = document.getElementById('sidebar-overlay');
 
             hamburger.addEventListener('click', () => {
-                sidebar.classList.add('show'); // (DIUBAH) Hanya menambah 'show'
+                sidebar.classList.add('show');
             });
 
-            // (BARU) Klik overlay untuk menutup sidebar
             overlay.addEventListener('click', () => {
                 sidebar.classList.remove('show');
             });
@@ -175,15 +183,15 @@ redirectIfNotLoggedIn('admin_login.php');
             // --- Logika Form Varian Dinamis ---
             const variantsContainer = document.getElementById('variants-container');
             const addVariantBtn = document.getElementById('add-variant-btn');
-            let variantIndex = 1; // Mulai dari 1 karena 0 sudah ada di HTML
+            let variantIndex = 1;
 
             addVariantBtn.addEventListener('click', () => {
                 const newRow = document.createElement('div');
                 newRow.classList.add('variant-row');
+                // (DIPERBARUI) Input 'product_code' dihapus
                 newRow.innerHTML = `
                     <input type="text" name="variants[${variantIndex}][name]" placeholder="Nama Varian">
                     <input type="number" name="variants[${variantIndex}][price]" placeholder="Harga" required>
-                    <input type="text" name="variants[${variantIndex}][code]" placeholder="Kode Produk" required>
                     <button type="button" class="btn btn-delete-variant">
                         <i class="fas fa-trash"></i>
                     </button>
@@ -195,14 +203,13 @@ redirectIfNotLoggedIn('admin_login.php');
             // Event delegation untuk tombol hapus varian
             variantsContainer.addEventListener('click', (e) => {
                 if (e.target.closest('.btn-delete-variant')) {
-                    // Jangan hapus jika hanya ada satu baris
                     if (variantsContainer.children.length > 1) {
                         e.target.closest('.variant-row').remove();
                     }
                 }
             });
 
-            // --- Logika BARU untuk Image Preview ---
+            // --- Logika Image Preview ---
             const imageInput = document.getElementById('product_image');
             const imagePreview = document.getElementById('image_preview');
 
@@ -215,8 +222,63 @@ redirectIfNotLoggedIn('admin_login.php');
                     };
                     reader.readAsDataURL(file);
                 } else {
-                    // Kembalikan ke placeholder jika tidak ada file
                     imagePreview.src = 'https://placehold.co/300x200/2c2c2c/a0a0a0?text=Preview+Gambar';
+                }
+            });
+
+            // --- (VALIDASI FORM FRONTEND) ---
+            const menuForm = document.getElementById('menu-form');
+            const errorMessage = document.getElementById('form-error-message');
+
+            menuForm.addEventListener('submit', (e) => {
+                e.preventDefault(); // Selalu hentikan submit untuk validasi
+                errorMessage.style.display = 'none';
+                errorMessage.innerHTML = '';
+                let errors = [];
+
+                // 1. Cek semua input[required]
+                const requiredFields = menuForm.querySelectorAll('[required]');
+                requiredFields.forEach(field => {
+                    if (field.value.trim() === '') {
+                        let fieldName = field.placeholder || field.name;
+                        // Coba cari labelnya
+                        const labelElement = menuForm.querySelector(`label[for="${field.id}"]`);
+                        if (labelElement) {
+                            fieldName = labelElement.textContent;
+                        }
+                        
+                        // Buat pesan error lebih deskriptif
+                        if (fieldName.includes('Nama Menu')) {
+                            errors.push('- Nama Menu wajib diisi.');
+                        } else if (fieldName.includes('Harga')) {
+                            errors.push('- Harga varian wajib diisi.');
+                        } else if (!errors.includes(`- ${fieldName} wajib diisi.`)) {
+                            // Pesan umum jika tidak teridentifikasi
+                            errors.push(`- ${fieldName} wajib diisi.`);
+                        }
+                    }
+                });
+                
+                // Hapus duplikat pesan
+                errors = [...new Set(errors)];
+
+
+                // 2. Cek validasi kategori
+                const category = document.getElementById('product_category').value;
+                const newCategory = document.getElementById('new_category').value.trim();
+                if (category === '' && newCategory === '') {
+                    errors.push('- Kategori wajib dipilih atau diisi.');
+                }
+
+                // 3. Tampilkan error atau submit
+                if (errors.length > 0) {
+                    errorMessage.innerHTML = '<strong>Validasi Gagal:</strong><br>' + errors.join('<br>');
+                    errorMessage.style.display = 'block';
+                    // Scroll ke atas agar admin melihat pesan error
+                    window.scrollTo({ top: 0, behavior: 'smooth' });
+                } else {
+                    // Tidak ada error, submit form
+                    menuForm.submit();
                 }
             });
         });

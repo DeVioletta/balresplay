@@ -2,6 +2,9 @@
 require_once __DIR__ . '/config/database.php';
 startSecureSession();
 redirectIfNotLoggedIn('admin_login.php');
+
+// (BARU) Ambil semua data produk dari database
+$products = getAllProductsWithVariants($db);
 ?>
 
 
@@ -11,19 +14,14 @@ redirectIfNotLoggedIn('admin_login.php');
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>Admin | Manajemen Menu</title>
-    <!-- CSS Utama -->
     <link rel="stylesheet" href="css/variable.css">
     <link rel="stylesheet" href="css/admin_menu.css">
-    <!-- CSS untuk Kartu Menu (diadaptasi dari menu2.css) -->
-    <!-- <link rel="stylesheet" href="css/menu2.css" id="menu-card-styles"> (DIHAPUS, style dipindah ke admin.css) -->
-    <!-- Font & Ikon -->
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
     <link href="https://fonts.googleapis.com/css2?family=Cormorant+Garamond:wght@300;400;600;700&family=Montserrat:wght@300;400;500&display=swap" rel="stylesheet">
 </head>
 <body>
     
     <div class="admin-layout">
-        <!-- ===== SIDEBAR ===== -->
         <aside class="sidebar" id="sidebar">
             <div class="sidebar-header">
                 <a href="index.php" class="nav-logo">
@@ -44,9 +42,7 @@ redirectIfNotLoggedIn('admin_login.php');
             </div>
         </aside>
 
-        <!-- ===== MAIN CONTENT ===== -->
         <main class="main-content">
-            <!-- Header Konten -->
             <header class="admin-header">
                 <button class="hamburger" id="hamburger">
                     <i class="fas fa-bars"></i>
@@ -54,7 +50,6 @@ redirectIfNotLoggedIn('admin_login.php');
                 <h1>Manajemen Menu</h1>
             </header>
 
-            <!-- Toolbar Menu -->
             <div class="menu-toolbar">
                 <div class="filter-group">
                     <label for="category-filter">Filter Kategori:</label>
@@ -74,84 +69,42 @@ redirectIfNotLoggedIn('admin_login.php');
                 </a>
             </div>
 
-            <!-- Grid Menu Admin -->
             <div class="admin-menu-grid">
                 
-                <!-- CONTOH ITEM 1 (Rice) -->
-                <!-- 
-                    Struktur HTML ini harus di-generate oleh backend (PHP) 
-                    berdasarkan data dari database.
-                -->
-                <div class="menu-item" data-product-id="f1">
-                    <div class="item-image"><img src="https://placehold.co/300x300/e8e4d8/5c6e58?text=Fried+Rice+Grill" alt="Fried Rice Chicken Grill"></div>
-                    <div class="item-info">
-                        <h3>Fried Rice Chicken Grill</h3>
-                        <p>Nasi goreng spesial disajikan dengan ayam panggang.</p>
-                        <div class="item-meta-admin">
-                            <span class="item-category-badge">Rice</span>
-                            <!-- <span class="item-price">40k</span> (DIHAPUS SESUAI PERMINTAAN) -->
+                <?php if (empty($products)): ?>
+                    <p>Belum ada menu yang ditambahkan.</p>
+                <?php else: ?>
+                    <?php foreach ($products as $product): ?>
+                        <?php
+                            // Logika placeholder
+                            $image_url = !empty($product['image_url']) 
+                                ? htmlspecialchars($product['image_url']) 
+                                : 'https://placehold.co/300x300/e8e4d8/5c6e58?text=' . urlencode($product['name']);
+                        ?>
+                        <div class="menu-item" data-product-id="<?php echo $product['product_id']; ?>">
+                            <div class="item-image"><img src="<?php echo $image_url; ?>" alt="<?php echo htmlspecialchars($product['name']); ?>"></div>
+                            <div class="item-info">
+                                <h3><?php echo htmlspecialchars($product['name']); ?></h3>
+                                <p><?php echo htmlspecialchars($product['description']); ?></p>
+                                <div class="item-meta-admin">
+                                    <span class="item-category-badge"><?php echo htmlspecialchars($product['category']); ?></span>
+                                </div>
+                            </div>
+                            <div class="item-actions">
+                                <a href="admin_form_menu.php?id=<?php echo $product['product_id']; ?>" class="btn btn-edit">
+                                    <i class="fas fa-edit"></i> Edit
+                                </a>
+                                <button class="btn btn-delete" data-id="<?php echo $product['product_id']; ?>">
+                                    <i class="fas fa-trash"></i> Hapus
+                                </button>
+                            </div>
                         </div>
-                    </div>
-                    <div class="item-actions">
-                        <a href="admin_form_menu.php?id=f1" class="btn btn-edit">
-                            <i class="fas fa-edit"></i> Edit
-                        </a>
-                        <button class="btn btn-delete" data-id="f1">
-                            <i class="fas fa-trash"></i> Hapus
-                        </button>
-                    </div>
-                </div>
-
-                <!-- CONTOH ITEM 2 (Coffee) -->
-                <div class="menu-item" data-product-id="c1">
-                    <div class="item-image"><img src="https://placehold.co/300x300/e8e4d8/5c6e58?text=Americano" alt="Americano"></div>
-                    <div class="item-info">
-                        <h3>Americano</h3>
-                        <p>Shot espresso yang disajikan dengan tambahan air.</p>
-                        <div class="item-meta-admin">
-                            <span class="item-category-badge">Coffee</span>
-                            <!-- <span class="item-price">20k</span> (DIHAPUS SESUAI PERMINTAAN) -->
-                        </div>
-                    </div>
-                     <div class="item-actions">
-                        <a href="admin_form_menu.php?id=c1" class="btn btn-edit">
-                            <i class="fas fa-edit"></i> Edit
-                        </a>
-                        <button class="btn btn-delete" data-id="c1">
-                            <i class="fas fa-trash"></i> Hapus
-                        </button>
-                    </div>
-                </div>
-
-                <!-- CONTOH ITEM 3 (Lite & Easy) -->
-                <div class="menu-item" data-product-id="f9">
-                    <div class="item-image"><img src="https://placehold.co/300x300/e8e4d8/5c6e58?text=Fries" alt="Crinkle Fries"></div>
-                    <div class="item-info">
-                        <h3>Crinkle Fries</h3>
-                        <p>Kentang goreng renyah dengan potongan berkerut.</p>
-                        <div class="item-meta-admin">
-                            <span class="item-category-badge">Lite & Easy</span>
-                            <!-- <span class="item-price">20k</span> (DIHAPUS SESUAI PERMINTAAN) -->
-                        </div>
-                    </div>
-                     <div class="item-actions">
-                        <a href="admin_form_menu.php?id=f9" class="btn btn-edit">
-                            <i class="fas fa-edit"></i> Edit
-                        </a>
-                        <button class="btn btn-delete" data-id="f9">
-                            <i class="fas fa-trash"></i> Hapus
-                        </button>
-                    </div>
-                </div>
-
-                
-
-                <!-- ... Item-item menu lainnya akan di-load di sini ... -->
+                    <?php endforeach; ?>
+                <?php endif; ?>
 
             </div>
         </main>
         
-        <!-- (BARU) Overlay untuk menutup sidebar di mobile -->
         <div class="sidebar-overlay" id="sidebar-overlay"></div>
     </div>
 
@@ -175,15 +128,15 @@ redirectIfNotLoggedIn('admin_login.php');
                 button.addEventListener('click', (e) => {
                     const id = e.currentTarget.dataset.id;
                     // Ganti 'confirm' dengan modal kustom jika Anda tidak ingin menggunakan dialog browser
-                    const isConfirmed = confirm(`Apakah Anda yakin ingin menghapus menu ini (ID: ${id})?`);
+                    const isConfirmed = confirm(`Apakah Anda yakin ingin menghapus menu ini (ID: ${id})? (Fitur Hapus belum diimplementasikan)`);
                     
                     if (isConfirmed) {
                         // Di sinilah logika backend untuk menghapus akan dipanggil
                         // Contoh: fetch('delete_menu.php', { method: 'POST', body: JSON.stringify({ id: id }) })
                         console.log('Menghapus item dengan ID:', id);
                         
-                        // Untuk demo, hapus elemen dari DOM
-                        e.currentTarget.closest('.menu-item').remove();
+                        // Untuk demo, hapus elemen dari DOM (jika fitur delete sudah jadi)
+                        // e.currentTarget.closest('.menu-item').remove();
                     }
                 });
             });

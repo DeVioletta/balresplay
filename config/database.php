@@ -154,4 +154,85 @@ function deleteAdminUser($db, $user_id) {
     return $stmt->execute();
 }
 
+
+/* =========================================
+   (BARU) FUNGSI MANAJEMEN MENU
+=========================================
+*/
+
+/**
+ * Mengambil semua produk beserta variannya dari database.
+ * (DIPERBARUI) Menghapus 'product_code' dari query dan array.
+ *
+ * @param mysqli $db Objek koneksi database
+ * @return array Daftar produk, masing-masing dengan array 'variants'
+ */
+function getAllProductsWithVariants($db) {
+    $sql = "SELECT p.*, pv.variant_id, pv.variant_name, pv.price 
+            FROM products p 
+            LEFT JOIN product_variants pv ON p.product_id = pv.product_id 
+            ORDER BY p.product_id, pv.variant_id";
+    $result = $db->query($sql);
+    if (!$result) return [];
+    
+    $products = [];
+    while ($row = $result->fetch_assoc()) {
+        $product_id = $row['product_id'];
+        if (!isset($products[$product_id])) {
+            $products[$product_id] = [
+                'product_id' => $row['product_id'],
+                'name' => $row['name'],
+                'description' => $row['description'],
+                'category' => $row['category'],
+                'image_url' => $row['image_url'],
+                'variants' => []
+            ];
+        }
+        if ($row['variant_id']) { // Hanya tambahkan varian jika ada (karena LEFT JOIN)
+            $products[$product_id]['variants'][] = [
+                'variant_id' => $row['variant_id'],
+                'name' => $row['variant_name'],
+                'price' => $row['price']
+                // 'code' Dihapus dari sini
+            ];
+        }
+    }
+    return $products;
+}
+
+/**
+ * Menyimpan produk baru ke tabel 'products'.
+ *
+ * @param mysqli $db
+ * @param string $name
+ * @param string $description
+ * @param string $category
+ * @param string|null $image_url
+ * @return int|false ID produk baru, atau false jika gagal.
+ */
+function createProduct($db, $name, $description, $category, $image_url) {
+    $stmt = $db->prepare("INSERT INTO products (name, description, category, image_url) VALUES (?, ?, ?, ?)");
+    $stmt->bind_param("ssss", $name, $description, $category, $image_url);
+    if ($stmt->execute()) {
+        return $db->insert_id;
+    }
+    return false;
+}
+
+/**
+ * Menyimpan varian baru ke tabel 'product_variants'.
+ * (DIPERBARUI) Menghapus 'product_code' dari parameter, query, dan bind.
+ *
+ * @param mysqli $db
+ * @param int $product_id
+ * @param string $variant_name
+ * @param float $price
+ * @return bool True jika berhasil
+ */
+function createProductVariant($db, $product_id, $variant_name, $price) {
+    $stmt = $db->prepare("INSERT INTO product_variants (product_id, variant_name, price) VALUES (?, ?, ?)");
+    $stmt->bind_param("isd", $product_id, $variant_name, $price);
+    return $stmt->execute();
+}
+
 ?>
