@@ -130,6 +130,7 @@ if ($is_edit_mode) {
                     <!-- (DIPERBARUI) Input tersembunyi untuk mode edit -->
                     <?php if ($is_edit_mode): ?>
                         <input type="hidden" name="product_id" value="<?php echo $product_data['product_id']; ?>">
+                        <!-- (DIPERBAIKI) Gunakan '??' untuk menangani 'null' -->
                         <input type="hidden" name="existing_image_url" value="<?php echo htmlspecialchars($product_data['image_url'] ?? ''); ?>">
                     <?php endif; ?>
 
@@ -137,13 +138,13 @@ if ($is_edit_mode) {
                         <h4>Informasi Dasar</h4>
                         <div class="form-group">
                             <label for="product_name">Nama Menu</label>
-                            <!-- (DIPERBARUI) Menambahkan 'value' -->
+                            <!-- (DIPERBAIKI) Gunakan '??' untuk menangani 'null' -->
                             <input type="text" id="product_name" name="product_name" placeholder="cth: Americano" required 
                                    value="<?php echo htmlspecialchars($product_data['name'] ?? ''); ?>">
                         </div>
                         <div class="form-group">
                             <label for="product_description">Deskripsi Singkat</label>
-                            <!-- (DIPERBARUI) Mengisi textarea -->
+                            <!-- (DIPERBAIKI) Gunakan '??' untuk menangani 'null' -->
                             <textarea id="product_description" name="product_description" rows="3" 
                                       placeholder="cth: Shot espresso yang disajikan dengan tambahan air..."><?php echo htmlspecialchars($product_data['description'] ?? ''); ?></textarea>
                         </div>
@@ -204,11 +205,13 @@ if ($is_edit_mode) {
                                         <!-- (PENTING) ID Varian tersembunyi -->
                                         <input type="hidden" name="variants[<?php echo $index; ?>][id]" value="<?php echo $variant['variant_id']; ?>">
                                         
+                                        <!-- (DIPERBAIKI) Ini adalah perbaikan untuk error line 208 -->
+                                        <!-- Menggunakan '?? ""' untuk menangani 'null' -->
                                         <input type="text" name="variants[<?php echo $index; ?>][name]" placeholder="Nama Varian" 
-                                               value="<?php echo htmlspecialchars($variant['variant_name']); ?>">
+                                               value="<?php echo htmlspecialchars($variant['variant_name'] ?? ''); ?>">
                                         
                                         <input type="number" name="variants[<?php echo $index; ?>][price]" placeholder="Harga" required 
-                                               value="<?php echo htmlspecialchars($variant['price']); ?>">
+                                               value="<?php echo htmlspecialchars($variant['price'] ?? ''); ?>">
                                         
                                         <div class="variant-availability">
                                             <input type="checkbox" id="available-<?php echo $index; ?>" name="variants[<?php echo $index; ?>][is_available]" value="1" 
