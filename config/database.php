@@ -68,6 +68,11 @@ function redirectIfNotLoggedIn($redirectUrl) {
     }
 }
 
+/* =========================================
+   FUNGSI MANAJEMEN PENGGUNA (ADMIN)
+=========================================
+*/
+
 /**
  * Mengambil data admin berdasarkan username dari tabel admin_users.
  *
@@ -91,6 +96,62 @@ function getAdminUserByUsername($db, $username) {
     } else {
         return null;
     }
+}
+
+/**
+ * (BARU) Mengambil SEMUA data admin dari database.
+ *
+ * @param mysqli $db Objek koneksi database
+ * @return mysqli_result|false Hasil query
+ */
+function getAllAdminUsers($db) {
+    // Ambil semua kecuali Super Admin, atau sesuaikan kebutuhan
+    // Di sini kita ambil semua
+    $result = $db->query("SELECT user_id, username, role, status FROM admin_users");
+    return $result;
+}
+
+/**
+ * (BARU) Membuat admin user baru.
+ * Status default diatur ke 0 (inactive) sesuai permintaan.
+ *
+ * @param mysqli $db Objek koneksi database
+ * @param string $username
+ * @param string $password_hash
+ * @param string $role
+ * @return bool True jika berhasil, false jika gagal.
+ */
+function createAdminUser($db, $username, $password_hash, $role) {
+    $stmt = $db->prepare("INSERT INTO admin_users (username, password_hash, role, status) VALUES (?, ?, ?, 0)");
+    $stmt->bind_param("sss", $username, $password_hash, $role);
+    return $stmt->execute();
+}
+
+/**
+ * (BARU) Memperbarui status pengguna (misal: 0 menjadi 1 saat login).
+ *
+ * @param mysqli $db Objek koneksi database
+ * @param int $user_id
+ * @param int $status (0 or 1)
+ * @return bool True jika berhasil
+ */
+function updateUserStatus($db, $user_id, $status) {
+    $stmt = $db->prepare("UPDATE admin_users SET status = ? WHERE user_id = ?");
+    $stmt->bind_param("ii", $status, $user_id);
+    return $stmt->execute();
+}
+
+/**
+ * (BARU) Menghapus admin user berdasarkan ID.
+ *
+ * @param mysqli $db Objek koneksi database
+ * @param int $user_id
+ * @return bool True jika berhasil
+ */
+function deleteAdminUser($db, $user_id) {
+    $stmt = $db->prepare("DELETE FROM admin_users WHERE user_id = ?");
+    $stmt->bind_param("i", $user_id);
+    return $stmt->execute();
 }
 
 ?>

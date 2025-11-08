@@ -92,6 +92,36 @@ h1, h2, h3, h4, h5 {
     font-weight: 600;
 }
 
+/* (BARU) Footer Sidebar untuk Logout */
+.sidebar-footer {
+    margin-top: auto; /* Mendorong ke bawah */
+    padding-top: 20px;
+    border-top: 1px solid var(--tertiary-color);
+}
+
+.logout-link {
+    display: block;
+    padding: 14px 18px;
+    color: var(--danger-color); /* Menggunakan warna merah */
+    text-decoration: none;
+    border-radius: 8px;
+    margin-bottom: 8px;
+    font-weight: 500;
+    transition: var(--transition);
+}
+
+.logout-link i {
+    margin-right: 12px;
+    width: 20px;
+    text-align: center;
+}
+
+.logout-link:hover {
+    background-color: var(--danger-color);
+    color: var(--light-text);
+}
+
+
 /* (BARU) Overlay untuk sidebar mobile */
 .sidebar-overlay {
     display: none;
@@ -197,6 +227,8 @@ label {
 input[type="text"],
 input[type="number"],
 input[type="file"],
+input[type="date"],
+input[type="password"],
 select,
 textarea {
     width: 100%;
@@ -328,11 +360,6 @@ input:focus, select:focus, textarea:focus {
     background-color: #a52a2a;
 }
 
-/* === (DIHAPUS) STYLING PREVIEW GAMBAR === */
-/* (Blok ini dipindahkan ke form.css) */
-
-/* === (DIHAPUS) HALAMAN FORMULIR === */
-/* (Blok ini dipindahkan ke form.css) */
 
 /* === RESPONSIVE === */
 @media (max-width: 992px) {
@@ -390,9 +417,6 @@ input:focus, select:focus, textarea:focus {
     .admin-menu-grid::-webkit-scrollbar { display: none; }
     .admin-menu-grid { -ms-overflow-style: none; scrollbar-width: none; }
     /* (AKHIR) LOGIKA SCROLL-X */
-
-    /* (DIHAPUS) RESPONSIVE FORM */
-    /* (Blok #variants-container dipindahkan ke form.css) */
 }
 
 @media (max-width: 576px) {
@@ -420,7 +444,4 @@ input:focus, select:focus, textarea:focus {
         flex: 0 0 280px; /* (DIUBAH) Lebar kartu 280px di HP */
         width: 280px;
     }
-
-    /* (DIHAPUS) RESPONSIVE FORM */
-    /* (Blok .form-section dan .form-actions dipindahkan ke form.css) */
 }
