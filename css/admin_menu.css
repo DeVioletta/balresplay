@@ -300,6 +300,23 @@ input:focus, select:focus, textarea:focus {
 }
 /* === (AKHIR) STYLE KARTU MENU === */
 
+/* === (BARU) BADGE KETERSEDIAAN === */
+.availability-badge {
+    position: absolute;
+    top: 10px;
+    right: 10px;
+    padding: 5px 12px;
+    border-radius: 20px;
+    font-size: 12px;
+    font-weight: 700;
+    color: var(--light-text);
+    z-index: 2;
+}
+.availability-badge.unavailable {
+    background-color: var(--danger-color);
+}
+/* === (AKHIR) BADGE KETERSEDIAAN === */
+
 
 /* === GRID MENU ADMIN === */
 .admin-menu-grid {

@@ -2,19 +2,32 @@
 require_once __DIR__ . '/config/database.php';
 startSecureSession();
 redirectIfNotLoggedIn('admin_login.php');
-?>
 
-<?php
-    // --- LOGIKA UNTUK BACKEND (CONTOH) ---
-    // Cek apakah ada parameter 'id' di URL
-    $is_edit_mode = isset($_GET['id']);
-    $product_id = $is_edit_mode ? $_GET['id'] : null;
+// --- (LOGIKA BARU) UNTUK MODE EDIT ---
+$is_edit_mode = isset($_GET['id']);
+$product_data = null;
+$variants_data = [];
+$image_preview = 'https://placehold.co/300x200/2c2c2c/a0a0a0?text=Preview+Gambar';
+$page_title = "Tambah Menu Baru";
 
-    $page_title = $is_edit_mode ? "Edit Menu (ID: $product_id)" : "Tambah Menu Baru";
+if ($is_edit_mode) {
+    $product_id = (int)$_GET['id'];
+    $product_data = getProductById($db, $product_id);
+    
+    if ($product_data) {
+        $page_title = "Edit Menu: " . htmlspecialchars($product_data['name']);
+        $variants_data = $product_data['variants'];
+        if (!empty($product_data['image_url'])) {
+            $image_preview = htmlspecialchars($product_data['image_url']);
+        }
+    } else {
+        // Jika ID tidak ditemukan, kembalikan ke menu utama
+        header("Location: admin_menu.php?error=notfound");
+        exit();
+    }
+}
+// --- (AKHIR LOGIKA BARU) ---
 
-    // Jika mode edit, Anda akan mengambil data dari database di sini
-    // $product_data = get_product_from_db($product_id);
-    // $variants_data = get_variants_from_db($product_id);
 ?>
 <!DOCTYPE html>
 <html lang="id">
@@ -28,7 +41,6 @@ redirectIfNotLoggedIn('admin_login.php');
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
     <link href="https://fonts.googleapis.com/css2?family=Cormorant+Garamond:wght@300;400;600;700&family=Montserrat:wght@300;400;500&display=swap" rel="stylesheet">
     
-    <!-- (BARU) Style untuk pesan error, diambil dari admin_settings.css -->
     <style>
         .admin-message {
             padding: 15px;
@@ -41,15 +53,39 @@ redirectIfNotLoggedIn('admin_login.php');
             color: var(--light-text);
         }
         
-        /* (BARU) Override CSS grid untuk baris varian karena 1 kolom dihapus */
+        /* (DIPERBARUI) CSS grid untuk baris varian */
         #variants-container .variant-row {
-            /* Original: 1fr 1fr 1fr auto */
-            grid-template-columns: 1fr 1fr auto; /* (DIPERBARUI) Menghapus 1fr untuk input kode */
+            grid-template-columns: 1fr 1fr 100px auto; /* Nama, Harga, Checkbox, Tombol Hapus */
+            gap: 15px;
         }
-        /* (BARU) Perbaikan layout di mobile */
+
+        /* (BARU) Style untuk checkbox "Tersedia" */
+        .variant-availability {
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            gap: 8px;
+            padding: 10px;
+            background-color: var(--dark-bg);
+            border-radius: 5px;
+        }
+        .variant-availability label {
+            margin: 0;
+            color: var(--text-muted);
+            font-size: 0.9rem;
+            cursor: pointer;
+        }
+        .variant-availability input[type="checkbox"] {
+            width: auto; /* Override default */
+            cursor: pointer;
+        }
+        
         @media (max-width: 768px) {
             #variants-container .variant-row {
-                grid-template-columns: 1fr; /* Tetap 1 kolom */
+                grid-template-columns: 1fr; /* Stack di HP */
+            }
+            .variant-availability {
+                justify-content: flex-start; /* Ratakan kiri di HP */
             }
         }
     </style>
@@ -87,35 +123,43 @@ redirectIfNotLoggedIn('admin_login.php');
 
             <div class="form-container">
                 
-                <!-- (BARU) Kontainer untuk pesan error -->
                 <div id="form-error-message" class="admin-message error" style="display: none;"></div>
 
                 <form action="actions/save_menu.php" method="POST" class="form-card" enctype="multipart/form-data" id="menu-form">
+                    
+                    <!-- (DIPERBARUI) Input tersembunyi untuk mode edit -->
                     <?php if ($is_edit_mode): ?>
-                        <input type="hidden" name="product_id" value="<?php echo $product_id; ?>">
+                        <input type="hidden" name="product_id" value="<?php echo $product_data['product_id']; ?>">
+                        <input type="hidden" name="existing_image_url" value="<?php echo htmlspecialchars($product_data['image_url'] ?? ''); ?>">
                     <?php endif; ?>
 
                     <div class="form-section">
                         <h4>Informasi Dasar</h4>
                         <div class="form-group">
                             <label for="product_name">Nama Menu</label>
-                            <input type="text" id="product_name" name="product_name" placeholder="cth: Americano" required>
+                            <!-- (DIPERBARUI) Menambahkan 'value' -->
+                            <input type="text" id="product_name" name="product_name" placeholder="cth: Americano" required 
+                                   value="<?php echo htmlspecialchars($product_data['name'] ?? ''); ?>">
                         </div>
                         <div class="form-group">
                             <label for="product_description">Deskripsi Singkat</label>
-                            <textarea id="product_description" name="product_description" rows="3" placeholder="cth: Shot espresso yang disajikan dengan tambahan air..."></textarea>
+                            <!-- (DIPERBARUI) Mengisi textarea -->
+                            <textarea id="product_description" name="product_description" rows="3" 
+                                      placeholder="cth: Shot espresso yang disajikan dengan tambahan air..."><?php echo htmlspecialchars($product_data['description'] ?? ''); ?></textarea>
                         </div>
                         <div class="form-group">
                             <label for="product_category">Kategori (Pilih yang sudah ada)</label>
+                            <!-- (DIPERBARUI) Logika 'selected' -->
                             <select id="product_category" name="product_category">
-                                <option value="" selected>Pilih Kategori</option>
-                                <option value="rice">Rice</option>
-                                <option value="noodles">Noodles</option>
-                                <option value="lite-easy">Lite & Easy</option>
-                                <option value="coffee">Coffee</option>
-                                <option value="tea">Tea Series</option>
-                                <option value="non-coffee">Non Coffee</option>
-                                <option value="signature">Signature Mocktail</option>
+                                <option value="" <?php echo empty($product_data['category']) ? 'selected' : ''; ?>>Pilih Kategori</option>
+                                <?php 
+                                    // Daftar kategori statis (bisa diganti dinamis)
+                                    $all_cats = ['rice', 'noodles', 'lite-easy', 'coffee', 'tea', 'non-coffee', 'signature'];
+                                    foreach ($all_cats as $cat) {
+                                        $selected = (isset($product_data['category']) && $product_data['category'] == $cat) ? 'selected' : '';
+                                        echo "<option value=\"$cat\" $selected>" . ucfirst($cat) . "</option>";
+                                    }
+                                ?>
                             </select>
                         </div>
                         <div class="form-group">
@@ -123,11 +167,11 @@ redirectIfNotLoggedIn('admin_login.php');
                             <input type="text" id="new_category" name="new_category" placeholder="cth: Pastry">
                         </div>
                         <div class="form-group">
-                            <label for="product_image">Upload Gambar (Opsional)</label>
+                            <label for="product_image">Upload Gambar (Kosongkan jika tidak ingin mengubah)</label>
                             <input type="file" id="product_image" name="product_image" accept="image/*">
                             <div class="image-preview-container">
-                                <img id="image_preview" src="https://placehold.co/300x200/2c2c2c/a0a0a0?text=Preview+Gambar" alt="Preview Gambar">
-
+                                <!-- (DIPERBARUI) Pratinjau gambar dinamis -->
+                                <img id="image_preview" src="<?php echo $image_preview; ?>" alt="Preview Gambar">
                             </div>
                         </div>
                     </div>
@@ -135,17 +179,49 @@ redirectIfNotLoggedIn('admin_login.php');
                     <div class="form-section">
                         <h4>Harga & Varian</h4>
                         <p class="form-hint">
-                            Tambahkan setidaknya satu varian. Untuk menu tanpa varian (seperti Nasi Goreng), biarkan "Nama Varian" kosong dan isi harganya.
+                            Tambahkan setidaknya satu varian. Atur ketersediaan (stok) menggunakan checkbox "Tersedia".
                         </p>
                         <div id="variants-container">
-                            <!-- (DIPERBARUI) Input 'product_code' dihapus -->
-                            <div class="variant-row">
-                                <input type="text" name="variants[0][name]" placeholder="Nama Varian (cth: Hot / Ice)">
-                                <input type="number" name="variants[0][price]" placeholder="Harga (cth: 20000)" required>
-                                <button type="button" class="btn btn-delete-variant" disabled>
-                                    <i class="fas fa-trash"></i>
-                                </button>
-                            </div>
+                            
+                            <!-- (DIPERBARUI) Daftar varian sekarang dinamis -->
+                            <?php if (empty($variants_data)): ?>
+                                <!-- Tampilkan 1 baris kosong jika BUKAN mode edit / tidak ada varian -->
+                                <div class="variant-row">
+                                    <input type="text" name="variants[0][name]" placeholder="Nama Varian (cth: Hot / Ice)">
+                                    <input type="number" name="variants[0][price]" placeholder="Harga (cth: 20000)" required>
+                                    <div class="variant-availability">
+                                        <input type="checkbox" id="available-0" name="variants[0][is_available]" value="1" checked>
+                                        <label for="available-0">Tersedia</label>
+                                    </div>
+                                    <button type="button" class="btn btn-delete-variant" disabled>
+                                        <i class="fas fa-trash"></i>
+                                    </button>
+                                </div>
+                            <?php else: ?>
+                                <!-- Tampilkan varian yang ada dari database -->
+                                <?php foreach ($variants_data as $index => $variant): ?>
+                                    <div class="variant-row">
+                                        <!-- (PENTING) ID Varian tersembunyi -->
+                                        <input type="hidden" name="variants[<?php echo $index; ?>][id]" value="<?php echo $variant['variant_id']; ?>">
+                                        
+                                        <input type="text" name="variants[<?php echo $index; ?>][name]" placeholder="Nama Varian" 
+                                               value="<?php echo htmlspecialchars($variant['variant_name']); ?>">
+                                        
+                                        <input type="number" name="variants[<?php echo $index; ?>][price]" placeholder="Harga" required 
+                                               value="<?php echo htmlspecialchars($variant['price']); ?>">
+                                        
+                                        <div class="variant-availability">
+                                            <input type="checkbox" id="available-<?php echo $index; ?>" name="variants[<?php echo $index; ?>][is_available]" value="1" 
+                                                   <?php echo $variant['is_available'] == 1 ? 'checked' : ''; ?>>
+                                            <label for="available-<?php echo $index; ?>">Tersedia</label>
+                                        </div>
+                                        <button type="button" class="btn btn-delete-variant">
+                                            <i class="fas fa-trash"></i>
+                                        </button>
+                                    </div>
+                                <?php endforeach; ?>
+                            <?php endif; ?>
+                            
                         </div>
                         <button type="button" id="add-variant-btn" class="btn btn-secondary">
                             <i class="fas fa-plus"></i> Tambah Varian
@@ -183,15 +259,22 @@ redirectIfNotLoggedIn('admin_login.php');
             // --- Logika Form Varian Dinamis ---
             const variantsContainer = document.getElementById('variants-container');
             const addVariantBtn = document.getElementById('add-variant-btn');
-            let variantIndex = 1;
+            // (DIPERBARUI) Index dimulai dari jumlah varian yang sudah ada
+            let variantIndex = <?php echo count($variants_data); ?>;
 
             addVariantBtn.addEventListener('click', () => {
                 const newRow = document.createElement('div');
                 newRow.classList.add('variant-row');
-                // (DIPERBARUI) Input 'product_code' dihapus
+                
+                // (DIPERBARUI) Baris baru sekarang menyertakan checkbox
+                // ID Varian (hidden) tidak disertakan, ini menandakan ini adalah varian BARU
                 newRow.innerHTML = `
                     <input type="text" name="variants[${variantIndex}][name]" placeholder="Nama Varian">
                     <input type="number" name="variants[${variantIndex}][price]" placeholder="Harga" required>
+                    <div class="variant-availability">
+                        <input type="checkbox" id="available-${variantIndex}" name="variants[${variantIndex}][is_available]" value="1" checked>
+                        <label for="available-${variantIndex}">Tersedia</label>
+                    </div>
                     <button type="button" class="btn btn-delete-variant">
                         <i class="fas fa-trash"></i>
                     </button>
@@ -203,8 +286,15 @@ redirectIfNotLoggedIn('admin_login.php');
             // Event delegation untuk tombol hapus varian
             variantsContainer.addEventListener('click', (e) => {
                 if (e.target.closest('.btn-delete-variant')) {
+                    // (DIPERBARUI) Cek jika ini satu-satunya baris
                     if (variantsContainer.children.length > 1) {
                         e.target.closest('.variant-row').remove();
+                    } else {
+                        // Jika ini baris terakhir, jangan hapus, tapi kosongkan field
+                        const lastRow = variantsContainer.querySelector('.variant-row');
+                        lastRow.querySelector('input[type="text"]').value = '';
+                        lastRow.querySelector('input[type="number"]').value = '';
+                        lastRow.querySelector('input[type="checkbox"]').checked = true;
                     }
                 }
             });
@@ -212,6 +302,8 @@ redirectIfNotLoggedIn('admin_login.php');
             // --- Logika Image Preview ---
             const imageInput = document.getElementById('product_image');
             const imagePreview = document.getElementById('image_preview');
+            // (BARU) Simpan URL gambar asli
+            const originalImageSrc = imagePreview.src;
 
             imageInput.addEventListener('change', (e) => {
                 const file = e.target.files[0];
@@ -222,7 +314,8 @@ redirectIfNotLoggedIn('admin_login.php');
                     };
                     reader.readAsDataURL(file);
                 } else {
-                    imagePreview.src = 'https://placehold.co/300x200/2c2c2c/a0a0a0?text=Preview+Gambar';
+                    // Kembalikan ke placeholder/gambar asli jika batal pilih
+                    imagePreview.src = originalImageSrc;
                 }
             });
 
@@ -241,27 +334,22 @@ redirectIfNotLoggedIn('admin_login.php');
                 requiredFields.forEach(field => {
                     if (field.value.trim() === '') {
                         let fieldName = field.placeholder || field.name;
-                        // Coba cari labelnya
                         const labelElement = menuForm.querySelector(`label[for="${field.id}"]`);
                         if (labelElement) {
                             fieldName = labelElement.textContent;
                         }
                         
-                        // Buat pesan error lebih deskriptif
                         if (fieldName.includes('Nama Menu')) {
                             errors.push('- Nama Menu wajib diisi.');
                         } else if (fieldName.includes('Harga')) {
                             errors.push('- Harga varian wajib diisi.');
                         } else if (!errors.includes(`- ${fieldName} wajib diisi.`)) {
-                            // Pesan umum jika tidak teridentifikasi
                             errors.push(`- ${fieldName} wajib diisi.`);
                         }
                     }
                 });
                 
-                // Hapus duplikat pesan
                 errors = [...new Set(errors)];
-
 
                 // 2. Cek validasi kategori
                 const category = document.getElementById('product_category').value;
@@ -274,10 +362,8 @@ redirectIfNotLoggedIn('admin_login.php');
                 if (errors.length > 0) {
                     errorMessage.innerHTML = '<strong>Validasi Gagal:</strong><br>' + errors.join('<br>');
                     errorMessage.style.display = 'block';
-                    // Scroll ke atas agar admin melihat pesan error
                     window.scrollTo({ top: 0, behavior: 'smooth' });
                 } else {
-                    // Tidak ada error, submit form
                     menuForm.submit();
                 }
             });

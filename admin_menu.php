@@ -3,10 +3,22 @@ require_once __DIR__ . '/config/database.php';
 startSecureSession();
 redirectIfNotLoggedIn('admin_login.php');
 
-// (BARU) Ambil semua data produk dari database
+// (DIPERBARUI) Ambil semua data produk dari database (sekarang termasuk is_available)
 $products = getAllProductsWithVariants($db);
 // (BARU) Ambil semua kategori unik untuk filter
 $categories = getAllCategories($db);
+
+// (BARU) Logika pesan sukses/error dari aksi delete/update
+$message = '';
+if (isset($_GET['success'])) {
+    if ($_GET['success'] == 'deleted') $message = '<div class="admin-message success">Menu berhasil dihapus.</div>';
+    if ($_GET['success'] == 'updated') $message = '<div class="admin-message success">Menu berhasil diperbarui.</div>';
+    if ($_GET['success'] == 'created') $message = '<div class="admin-message success">Menu baru berhasil dibuat.</div>';
+}
+if (isset($_GET['error'])) {
+    if ($_GET['error'] == 'deletefailed') $message = '<div class="admin-message error">Gagal menghapus menu.</div>';
+    if ($_GET['error'] == 'notfound') $message = '<div class="admin-message error">Produk tidak ditemukan.</div>';
+}
 ?>
 
 
@@ -20,6 +32,23 @@ $categories = getAllCategories($db);
     <link rel="stylesheet" href="css/admin_menu.css">
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
     <link href="https://fonts.googleapis.com/css2?family=Cormorant+Garamond:wght@300;400;600;700&family=Montserrat:wght@300;400;500&display=swap" rel="stylesheet">
+    <style>
+        /* (BARU) CSS untuk pesan error/sukses (diambil dari admin_settings) */
+        .admin-message {
+            padding: 15px;
+            border-radius: 5px;
+            margin-bottom: 20px;
+            font-weight: 500;
+        }
+        .admin-message.success {
+            background-color: var(--success-color);
+            color: var(--light-text);
+        }
+        .admin-message.error {
+            background-color: var(--danger-color);
+            color: var(--light-text);
+        }
+    </style>
 </head>
 <body>
     
@@ -52,6 +81,9 @@ $categories = getAllCategories($db);
                 <h1>Manajemen Menu</h1>
             </header>
 
+            <!-- (BARU) Tampilkan pesan sukses/error -->
+            <?php echo $message; ?>
+
             <div class="menu-toolbar">
                 <div class="filter-group">
                     <label for="category-filter">Filter Kategori:</label>
@@ -81,13 +113,34 @@ $categories = getAllCategories($db);
                             $image_url = !empty($product['image_url']) 
                                 ? htmlspecialchars($product['image_url']) 
                                 : 'https://placehold.co/300x300/e8e4d8/5c6e58?text=' . urlencode($product['name']);
+                            
+                            // (BARU) Logika cek ketersediaan
+                            $all_variants_unavailable = true;
+                            if (empty($product['variants'])) {
+                                // Jika tidak ada varian, anggap saja tidak tersedia (atau bisa juga true)
+                                $all_variants_unavailable = true; 
+                            } else {
+                                foreach ($product['variants'] as $variant) {
+                                    if ($variant['is_available'] == 1) {
+                                        $all_variants_unavailable = false;
+                                        break;
+                                    }
+                                }
+                            }
                         ?>
                         <!-- (DIPERBARUI) Menambahkan data-category untuk JS -->
                         <div class="menu-item" 
                              data-product-id="<?php echo $product['product_id']; ?>" 
                              data-category="<?php echo htmlspecialchars($product['category']); ?>">
                             
-                            <div class="item-image"><img src="<?php echo $image_url; ?>" alt="<?php echo htmlspecialchars($product['name']); ?>"></div>
+                            <div class="item-image">
+                                <!-- (BARU) Badge Ketersediaan -->
+                                <?php if ($all_variants_unavailable): ?>
+                                    <div class="availability-badge unavailable">HABIS</div>
+                                <?php endif; ?>
+                                <img src="<?php echo $image_url; ?>" alt="<?php echo htmlspecialchars($product['name']); ?>">
+                            </div>
+                            
                             <div class="item-info">
                                 <h3><?php echo htmlspecialchars($product['name']); ?></h3>
                                 <p><?php echo htmlspecialchars($product['description']); ?></p>
@@ -99,7 +152,10 @@ $categories = getAllCategories($db);
                                 <a href="admin_form_menu.php?id=<?php echo $product['product_id']; ?>" class="btn btn-edit">
                                     <i class="fas fa-edit"></i> Edit
                                 </a>
-                                <button class="btn btn-delete" data-id="<?php echo $product['product_id']; ?>">
+                                <!-- (DIPERBARUI) Menambahkan data-name untuk pesan konfirmasi -->
+                                <button class="btn btn-delete" 
+                                        data-id="<?php echo $product['product_id']; ?>"
+                                        data-name="<?php echo htmlspecialchars($product['name']); ?>">
                                     <i class="fas fa-trash"></i> Hapus
                                 </button>
                             </div>
@@ -149,20 +205,35 @@ $categories = getAllCategories($db);
             }
 
 
-            // Logika untuk tombol hapus (untuk integrasi backend)
+            // (DIPERBARUI) Logika tombol hapus sekarang memanggil file backend
             document.querySelectorAll('.btn-delete').forEach(button => {
                 button.addEventListener('click', (e) => {
                     const id = e.currentTarget.dataset.id;
-                    // Ganti 'confirm' dengan modal kustom jika Anda tidak ingin menggunakan dialog browser
-                    const isConfirmed = confirm(`Apakah Anda yakin ingin menghapus menu ini (ID: ${id})? (Fitur Hapus belum diimplementasikan)`);
+                    const name = e.currentTarget.dataset.name;
+                    
+                    const isConfirmed = confirm(`Apakah Anda yakin ingin menghapus menu "${name}" (ID: ${id})?`);
                     
                     if (isConfirmed) {
-                        // Di sinilah logika backend untuk menghapus akan dipanggil
-                        // Contoh: fetch('delete_menu.php', { method: 'POST', body: JSON.stringify({ id: id }) })
-                        console.log('Menghapus item dengan ID:', id);
-                        
-                        // Untuk demo, hapus elemen dari DOM (jika fitur delete sudah jadi)
-                        // e.currentTarget.closest('.menu-item').remove();
+                        // Kirim request ke backend
+                        fetch(`actions/delete_menu.php?id=${id}`, {
+                            method: 'GET'
+                        })
+                        .then(response => response.json())
+                        .then(data => {
+                            if (data.status === 'success') {
+                                // Hapus elemen dari DOM
+                                // e.currentTarget.closest('.menu-item').remove();
+                                // (Lebih baik) Reload halaman untuk menampilkan pesan sukses
+                                window.location.href = 'admin_menu.php?success=deleted';
+                            } else {
+                                // Tampilkan pesan error
+                                window.location.href = 'admin_menu.php?error=' + (data.message || 'deletefailed');
+                            }
+                        })
+                        .catch(error => {
+                            console.error('Error:', error);
+                            alert('Terjadi kesalahan saat mencoba menghapus.');
+                        });
                     }
                 });
             });

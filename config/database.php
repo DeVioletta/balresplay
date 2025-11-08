@@ -162,13 +162,13 @@ function deleteAdminUser($db, $user_id) {
 
 /**
  * Mengambil semua produk beserta variannya dari database.
- * (DIPERBARUI) Menghapus 'product_code' dari query dan array.
+ * (DIPERBARUI) Menambahkan 'is_available'.
  *
  * @param mysqli $db Objek koneksi database
  * @return array Daftar produk, masing-masing dengan array 'variants'
  */
 function getAllProductsWithVariants($db) {
-    $sql = "SELECT p.*, pv.variant_id, pv.variant_name, pv.price 
+    $sql = "SELECT p.*, pv.variant_id, pv.variant_name, pv.price, pv.is_available 
             FROM products p 
             LEFT JOIN product_variants pv ON p.product_id = pv.product_id 
             ORDER BY p.product_id, pv.variant_id";
@@ -192,13 +192,44 @@ function getAllProductsWithVariants($db) {
             $products[$product_id]['variants'][] = [
                 'variant_id' => $row['variant_id'],
                 'name' => $row['variant_name'],
-                'price' => $row['price']
-                // 'code' Dihapus dari sini
+                'price' => $row['price'],
+                'is_available' => $row['is_available'] // Ditambahkan
             ];
         }
     }
     return $products;
 }
+
+/**
+ * (FUNGSI BARU) Mengambil SATU produk dan variannya berdasarkan ID.
+ *
+ * @param mysqli $db
+ * @param int $product_id
+ * @return array|null Data produk tunggal atau null
+ */
+function getProductById($db, $product_id) {
+    $stmt = $db->prepare("SELECT * FROM products WHERE product_id = ?");
+    $stmt->bind_param("i", $product_id);
+    $stmt->execute();
+    $result = $stmt->get_result();
+    
+    if ($result->num_rows == 0) return null;
+    
+    $product = $result->fetch_assoc();
+    $product['variants'] = [];
+    
+    $stmt_var = $db->prepare("SELECT * FROM product_variants WHERE product_id = ? ORDER BY variant_id");
+    $stmt_var->bind_param("i", $product_id);
+    $stmt_var->execute();
+    $variants_result = $stmt_var->get_result();
+    
+    while ($row = $variants_result->fetch_assoc()) {
+        $product['variants'][] = $row;
+    }
+    
+    return $product;
+}
+
 
 /**
  * (FUNGSI BARU) Mengambil semua kategori unik dari tabel products.
@@ -235,18 +266,98 @@ function createProduct($db, $name, $description, $category, $image_url) {
 }
 
 /**
+ * (FUNGSI BARU) Memperbarui produk di tabel 'products'.
+ *
+ * @param mysqli $db
+ * @param int $product_id
+ * @param string $name
+ * @param string $description
+ * @param string $category
+ * @param string|null $image_url
+ * @return bool True jika berhasil
+ */
+function updateProduct($db, $product_id, $name, $description, $category, $image_url) {
+    $stmt = $db->prepare("UPDATE products SET name = ?, description = ?, category = ?, image_url = ? WHERE product_id = ?");
+    $stmt->bind_param("ssssi", $name, $description, $category, $image_url, $product_id);
+    return $stmt->execute();
+}
+
+
+/**
  * Menyimpan varian baru ke tabel 'product_variants'.
- * (DIPERBARUI) Menghapus 'product_code' dari parameter, query, dan bind.
+ * (DIPERBARUI) Menambahkan 'is_available'.
  *
  * @param mysqli $db
  * @param int $product_id
  * @param string $variant_name
  * @param float $price
+ * @param int $is_available (0 atau 1)
  * @return bool True jika berhasil
  */
-function createProductVariant($db, $product_id, $variant_name, $price) {
-    $stmt = $db->prepare("INSERT INTO product_variants (product_id, variant_name, price) VALUES (?, ?, ?)");
-    $stmt->bind_param("isd", $product_id, $variant_name, $price);
+function createProductVariant($db, $product_id, $variant_name, $price, $is_available) {
+    $stmt = $db->prepare("INSERT INTO product_variants (product_id, variant_name, price, is_available) VALUES (?, ?, ?, ?)");
+    $stmt->bind_param("isdi", $product_id, $variant_name, $price, $is_available);
+    return $stmt->execute();
+}
+
+/**
+ * (FUNGSI BARU) Memperbarui varian di tabel 'product_variants'.
+ *
+ * @param mysqli $db
+ * @param int $variant_id
+ * @param string $variant_name
+ * @param float $price
+ * @param int $is_available
+ * @return bool True jika berhasil
+ */
+function updateProductVariant($db, $variant_id, $variant_name, $price, $is_available) {
+    $stmt = $db->prepare("UPDATE product_variants SET variant_name = ?, price = ?, is_available = ? WHERE variant_id = ?");
+    $stmt->bind_param("sdii", $variant_name, $price, $is_available, $variant_id);
+    return $stmt->execute();
+}
+
+/**
+ * (FUNGSI BARU) Menghapus produk. Kaskade di DB akan menghapus varian.
+ *
+ * @param mysqli $db
+ * @param int $product_id
+ * @return bool True jika berhasil
+ */
+function deleteProduct($db, $product_id) {
+    $stmt = $db->prepare("DELETE FROM products WHERE product_id = ?");
+    $stmt->bind_param("i", $product_id);
+    return $stmt->execute();
+}
+
+/**
+ * (FUNGSI BARU) Mengambil semua ID varian untuk produk tertentu.
+ *
+ * @param mysqli $db
+ * @param int $product_id
+ * @return array Daftar ID varian
+ */
+function getVariantIdsForProduct($db, $product_id) {
+    $stmt = $db->prepare("SELECT variant_id FROM product_variants WHERE product_id = ?");
+    $stmt->bind_param("i", $product_id);
+    $stmt->execute();
+    $result = $stmt->get_result();
+    $ids = [];
+    while ($row = $result->fetch_assoc()) {
+        $ids[] = $row['variant_id'];
+    }
+    return $ids;
+}
+
+/**
+ * (FUNGSI BARU) Menghapus varian berdasarkan ID-nya.
+ *
+ * @param mysqli $db
+ * @param int $variant_id
+ * @return bool True jika berhasil
+ */
+function deleteVariant($db, $variant_id) {
+    $stmt = $db->prepare("DELETE FROM product_variants WHERE variant_id = ?");
+    $stmt->bind_param("i", $variant_id);
     return $stmt->execute();
 }
 
