@@ -102,12 +102,25 @@
     padding: 10px 18px;
 }
 
+
+
+input[type="text"], input[type="number"], input[type="file"], input[type="date"], input[type="password"], select, textarea {
+    background-color: white;
+    color: var(--dark-bg);
+    text-align: center;
+}
+
+#start_date_picker, #end_date_picker{
+    color: white;
+    text-align: left;
+}
 /* --- Tombol Admin Toolbar (di atas tabel) --- */
 .admin-toolbar {
     display: flex;
     justify-content: flex-end;
     margin-bottom: 20px;
 }
+
 
 
 /* --- Responsive --- */
