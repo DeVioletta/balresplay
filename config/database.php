@@ -361,4 +361,192 @@ function deleteVariant($db, $variant_id) {
     return $stmt->execute();
 }
 
+
+
+
+
+
+
+
+
+
+/* =========================================
+   (BARU) FUNGSI UNTUK DASHBOARD
+=========================================
+*/
+
+/**
+ * Mengambil statistik ringkasan untuk dashboard.
+ *
+ * @param mysqli $db Objek koneksi database
+ * @param string|null $start_date (Format 'Y-m-d')
+ * @param string|null $end_date (Format 'Y-m-d')
+ * @return array Berisi 'total_revenue', 'total_orders'
+ */
+function getDashboardStats($db, $start_date = null, $end_date = null) {
+    $stats = [
+        'total_revenue' => 0,
+        'total_orders' => 0
+    ];
+    
+    // Siapkan filter tanggal
+    $date_filter = "";
+    $types = "";
+    $params = [];
+
+    if ($start_date && $end_date) {
+        $date_filter = " AND DATE(order_time) BETWEEN ? AND ?";
+        $types = "ss";
+        $params[] = $start_date;
+        $params[] = $end_date;
+    } elseif ($start_date) {
+        $date_filter = " AND DATE(order_time) >= ?";
+        $types = "s";
+        $params[] = $start_date;
+    } elseif ($end_date) {
+        $date_filter = " AND DATE(order_time) <= ?";
+        $types = "s";
+        $params[] = $end_date;
+    }
+
+    // 1. Ambil Total Pendapatan (Hanya dari pesanan 'Selesai')
+    $sql_revenue = "SELECT SUM(total_price) as total_revenue FROM orders WHERE status = 'Selesai'" . $date_filter;
+    $stmt_revenue = $db->prepare($sql_revenue);
+    if ($types) $stmt_revenue->bind_param($types, ...$params);
+    $stmt_revenue->execute();
+    $result = $stmt_revenue->get_result();
+    $row = $result->fetch_assoc();
+    $stats['total_revenue'] = $row['total_revenue'] ?? 0;
+    $stmt_revenue->close();
+
+    // 2. Ambil Jumlah Order (Semua order kecuali 'Dibatalkan')
+    $sql_orders = "SELECT COUNT(order_id) as total_orders FROM orders WHERE status != 'Dibatalkan'" . $date_filter;
+    $stmt_orders = $db->prepare($sql_orders);
+    if ($types) $stmt_orders->bind_param($types, ...$params);
+    $stmt_orders->execute();
+    $result = $stmt_orders->get_result();
+    $row = $result->fetch_assoc();
+    $stats['total_orders'] = $row['total_orders'] ?? 0;
+    $stmt_orders->close();
+    
+    return $stats;
+}
+
+/**
+ * Mengambil 3 menu terlaris.
+ *
+ * @param mysqli $db Objek koneksi database
+ * @param string|null $start_date
+ * @param string|null $end_date
+ * @return array Daftar 3 menu terlaris
+ */
+function getTopMenus($db, $start_date = null, $end_date = null) {
+    // Siapkan filter tanggal
+    $date_filter = "";
+    $types = "";
+    $params = [];
+
+    if ($start_date && $end_date) {
+        $date_filter = " JOIN orders o ON oi.order_id = o.order_id WHERE DATE(o.order_time) BETWEEN ? AND ?";
+        $types = "ss";
+        $params[] = $start_date;
+        $params[] = $end_date;
+    } elseif ($start_date) {
+        $date_filter = " JOIN orders o ON oi.order_id = o.order_id WHERE DATE(o.order_time) >= ?";
+        $types = "s";
+        $params[] = $start_date;
+    } elseif ($end_date) {
+        $date_filter = " JOIN orders o ON oi.order_id = o.order_id WHERE DATE(o.order_time) <= ?";
+        $types = "s";
+        $params[] = $end_date;
+    } else {
+         $date_filter = ""; // Tidak ada join jika tidak ada filter
+    }
+
+    $sql = "
+        SELECT p.name, SUM(oi.quantity) as total_sold
+        FROM order_items oi
+        JOIN product_variants pv ON oi.variant_id = pv.variant_id
+        JOIN products p ON pv.product_id = p.product_id
+        $date_filter
+        GROUP BY p.product_id, p.name
+        ORDER BY total_sold DESC
+        LIMIT 3
+    ";
+    
+    $stmt = $db->prepare($sql);
+    if ($types) $stmt->bind_param($types, ...$params);
+    $stmt->execute();
+    $result = $stmt->get_result();
+    return $result->fetch_all(MYSQLI_ASSOC);
+}
+
+/**
+ * (BARU) Mengambil data pesanan terperinci untuk tabel dashboard.
+ *
+ * @param mysqli $db
+ * @param string|null $start_date
+ * @param string|null $end_date
+ * @return array
+ */
+function getDashboardOrderDetails($db, $start_date = null, $end_date = null) {
+     // Siapkan filter tanggal
+    $date_filter = "WHERE o.status != 'Dibatalkan'";
+    $types = "";
+    $params = [];
+
+    if ($start_date && $end_date) {
+        $date_filter .= " AND DATE(o.order_time) BETWEEN ? AND ?";
+        $types = "ss";
+        $params[] = $start_date;
+        $params[] = $end_date;
+    } elseif ($start_date) {
+        $date_filter .= " AND DATE(o.order_time) >= ?";
+        $types = "s";
+        $params[] = $start_date;
+    } elseif ($end_date) {
+        $date_filter .= " AND DATE(o.order_time) <= ?";
+        $types = "s";
+        $params[] = $end_date;
+    }
+    
+    $sql = "
+        SELECT 
+            o.order_id, 
+            o.order_time, 
+            o.table_number, 
+            p.name as product_name, 
+            pv.variant_name, 
+            oi.quantity, 
+            (oi.price_per_item * oi.quantity) as sub_total
+        FROM order_items oi
+        JOIN orders o ON oi.order_id = o.order_id
+        JOIN product_variants pv ON oi.variant_id = pv.variant_id
+        JOIN products p ON pv.product_id = p.product_id
+        $date_filter
+        ORDER BY o.order_time DESC, o.order_id DESC
+        LIMIT 100 -- Batasi 100 data terbaru
+    ";
+    
+    $stmt = $db->prepare($sql);
+    if ($types) $stmt->bind_param($types, ...$params);
+    $stmt->execute();
+    $result = $stmt->get_result();
+    return $result->fetch_all(MYSQLI_ASSOC);
+}
+
+/**
+ * (BARU) Hanya update ketersediaan varian (untuk Dapur)
+ *
+ * @param mysqli $db
+ * @param int $variant_id
+ * @param int $is_available
+ * @return bool
+ */
+function updateVariantAvailability($db, $variant_id, $is_available) {
+    $stmt = $db->prepare("UPDATE product_variants SET is_available = ? WHERE variant_id = ?");
+    $stmt->bind_param("ii", $is_available, $variant_id);
+    return $stmt->execute();
+}
+
 ?>

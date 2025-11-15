@@ -1,14 +1,17 @@
 <?php
-    // Cek jika ada parameter error di URL (misal: dari proses login yang gagal)
+    // (DIUBAH) Tambahkan logika untuk error=2
     $error_message = '';
     if (isset($_GET['error'])) {
         if ($_GET['error'] == '1') {
             $error_message = 'Username atau password salah.';
+        } else if ($_GET['error'] == '2') {
+            $error_message = 'Akun Anda nonaktif. Hubungi Super Admin.';
         } else {
             $error_message = 'Terjadi kesalahan. Silakan coba lagi.';
         }
     }
 ?>
+
 <!DOCTYPE html>
 <html lang="id">
 <head>

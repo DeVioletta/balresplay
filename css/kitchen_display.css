@@ -1,0 +1,229 @@
+/* =========================================
+   CSS KHUSUS UNTUK KITCHEN DISPLAY SYSTEM (kitchen_display.php) 
+=========================================
+*/
+:root {
+    --kitchen-bg: var(--dark-bg); /* Menggunakan dark-bg utama untuk konsistensi */
+    --card-bg: var(--secondary-color); /* Menggunakan secondary-color untuk konsistensi */
+    --border-color: var(--tertiary-color);
+    --text-light: #f5f5f5; 
+    --text-muted: #a0a0a0;
+    --font-main: "Montserrat", sans-serif; 
+    --font-heading: "Cormorant Garamond", serif;
+    --status-kirim: #007bff; 
+    --status-dimasak: #fd7e14;
+}
+
+/* KDS Page Body */
+#kds-page {
+    /* Hanya memastikan body menggunakan background utama */
+    background-color: var(--dark-bg);
+}
+
+/* PERBAIKAN: Menghapus class kds-content-wrapper di PHP. main-content di KDS
+   hanya perlu satu class tambahan untuk mengontrol overflow.
+   Perbaiki KDS main-content agar tidak menimpa padding admin global */
+.main-content.kds-main-content {
+    /* main-content memiliki padding: 24px; dari admin_menu.css */
+    /* Kita hanya perlu memastikan konten di dalamnya tidak melebihi batas */
+    overflow-y: auto;
+}
+
+/* Grid KDS */
+.kitchen-grid {
+    display: grid;
+    grid-template-columns: repeat(auto-fill, minmax(340px, 1fr));
+    gap: 25px;
+    /* PERBAIKAN: Hapus padding di sini agar layout mewarisi padding dari main-content */
+}
+
+.kitchen-order-card {
+    background-color: var(--card-bg); 
+    border-radius: 10px;
+    border-top: 5px solid var(--status-kirim); 
+    box-shadow: 0 5px 15px rgba(0,0,0,0.2);
+    display: flex; 
+    flex-direction: column;
+}
+.kitchen-order-card[data-status="Sedang Dimasak"] { 
+    border-top-color: var(--status-dimasak); 
+}
+.card-header {
+    padding: 15px 20px; 
+    display: flex; 
+    justify-content: space-between;
+    align-items: center; 
+    border-bottom: 1px solid var(--border-color);
+}
+.card-header h3 { 
+    font-size: 1.8rem; 
+    margin: 0; 
+    color: var(--text-light); 
+    font-family: var(--font-heading);
+}
+.card-header .order-details { 
+    text-align: right; 
+}
+.card-header .order-details span { 
+    display: block; 
+    font-size: 1rem; 
+    color: var(--text-muted); 
+}
+.card-header .order-details strong { 
+    font-size: 1.3rem; 
+    color: var(--status-kirim); 
+}
+.kitchen-order-card[data-status="Sedang Dimasak"] .card-header .order-details strong {
+    color: var(--status-dimasak);
+}
+
+.card-body { 
+    padding: 20px; 
+    flex-grow: 1; 
+}
+.card-body h4 {
+    font-size: 1.1rem; 
+    margin: 0 0 10px 0; 
+    color: var(--text-muted);
+    text-transform: uppercase; 
+    letter-spacing: 1px;
+    font-family: var(--font-main);
+}
+.order-item-list { 
+    list-style: none; 
+    padding: 0; 
+    margin: 0; 
+}
+.order-item {
+    padding: 10px 0; 
+    border-bottom: 1px dashed var(--border-color);
+    display: flex; 
+    justify-content: space-between; 
+    gap: 15px;
+}
+.order-item:last-child { 
+    border-bottom: none; 
+}
+.order-item .item-info { 
+    font-size: 1.1rem; 
+    font-weight: 500; 
+    font-family: var(--font-main);
+    display: flex;
+    flex-direction: column;
+}
+.order-item .item-info strong { 
+    font-size: 1.2rem; 
+    margin-right: 8px; 
+    color: var(--accent-color); 
+}
+.order-item .item-info span {
+    display: inline;
+}
+.order-item .item-info .item-variant {
+    font-size: 0.9rem; 
+    color: var(--text-muted);
+    font-style: italic; 
+    display: block; 
+    margin-left: 20px;
+}
+.order-notes {
+    margin-top: 15px; 
+    background-color: rgba(0,0,0,0.2);
+    padding: 10px; 
+    border-radius: 5px; 
+    border-left: 3px solid var(--accent-color);
+}
+.order-notes h4 { 
+    font-size: 0.9rem; 
+    margin-bottom: 5px; 
+    font-family: var(--font-main);
+}
+.order-notes p { 
+    margin: 0; 
+    font-size: 0.9rem; 
+    font-style: italic; 
+    color: var(--text-light); 
+}
+.order-notes.no-notes { 
+    display: none; 
+}
+.card-footer { 
+    padding: 15px; 
+    background-color: rgba(0,0,0,0.2); 
+    border-top: 1px solid var(--border-color); 
+}
+.btn-kitchen {
+    width: 100%; 
+    padding: 15px; 
+    font-size: 1.1rem; 
+    font-weight: 600;
+    border: none; 
+    border-radius: 5px; 
+    cursor: pointer; 
+    transition: var(--transition);
+    font-family: var(--font-main); 
+    text-transform: uppercase;
+}
+.btn-kitchen i {
+    margin-right: 5px;
+}
+.btn-start-cooking { 
+    background-color: var(--status-kirim); 
+    color: var(--text-light); 
+}
+.btn-start-cooking:hover { 
+    background-color: #0056b3; 
+}
+.btn-mark-ready { 
+    background-color: var(--status-dimasak); 
+    color: var(--text-light); 
+}
+.btn-mark-ready:hover { 
+    background-color: #c2610f; 
+}
+.no-orders-message {
+    width: 100%; 
+    text-align: center; 
+    padding: 50px;
+    font-size: 1.5rem; 
+    color: var(--text-muted); 
+    grid-column: 1 / -1;
+    font-family: var(--font-heading);
+}
+.no-orders-message i { 
+    font-size: 3rem; 
+    display: block; 
+    margin-bottom: 20px; 
+}
+
+/* REFRESH BAR - Konsisten dengan admin_orders.css */
+#refresh-bar {
+    position: fixed;
+    bottom: 0;
+    left: 260px; /* Lebar sidebar */
+    width: calc(100% - 260px);
+    height: 5px;
+    background-color: var(--accent-color);
+    animation: shrink 10s linear infinite; /* Interval 10 detik sesuai di PHP */
+    z-index: 100;
+}
+@keyframes shrink {
+    from { width: calc(100% - 260px); }
+    to { width: 0%; }
+}
+
+@media (max-width: 992px) {
+    #refresh-bar { left: 0; width: 100%; }
+    @keyframes shrink { from { width: 100%; } to { width: 0%; } }
+    
+    .kitchen-grid {
+        grid-template-columns: repeat(auto-fill, minmax(300px, 1fr));
+        gap: 15px;
+        /* Hapus padding */
+    }
+}
+@media (max-width: 576px) {
+    .kitchen-grid {
+        grid-template-columns: 1fr;
+    }
+}
