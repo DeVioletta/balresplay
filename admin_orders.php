@@ -1,9 +1,68 @@
 <?php
+date_default_timezone_set('Asia/Jakarta'); // (PERBAIKAN POIN 4)
 require_once __DIR__ . '/config/database.php';
 startSecureSession();
 redirectIfNotLoggedIn('admin_login.php');
-?>
 
+$role = $_SESSION['role'];
+// (PERBAIKAN POIN 2) Role check
+if ($role == 'Dapur') {
+    // Dapur tidak bisa akses halaman ini, tendang ke KDS
+    $_SESSION['error_message'] = 'Halaman pesanan Anda ada di Antrian Dapur.';
+    header("Location: kitchen_display.php");
+    exit();
+}
+if ($role !== 'Kasir' && $role !== 'Super Admin') {
+     $_SESSION['error_message'] = 'Anda tidak memiliki izin.';
+     header("Location: admin_login.php");
+     exit();
+}
+
+// (Fungsi getOrdersForAdmin tidak berubah)
+function getOrdersForAdmin($db, $is_history = false) {
+    if ($is_history) {
+        $status_filter = "IN ('Selesai', 'Dibatalkan')";
+    } else {
+        $status_filter = "IN ('Menunggu Pembayaran', 'Kirim ke Dapur', 'Sedang Dimasak', 'Siap Diantar')";
+    }
+    $sql = "
+        SELECT 
+            o.order_id, o.table_number, o.status, o.notes, o.order_time, o.total_price,
+            oi.quantity, pv.variant_name, p.name as product_name
+        FROM orders o
+        LEFT JOIN order_items oi ON o.order_id = oi.order_id
+        LEFT JOIN product_variants pv ON oi.variant_id = pv.variant_id
+        LEFT JOIN products p ON pv.product_id = p.product_id
+        WHERE o.status $status_filter
+        ORDER BY o.order_time " . ($is_history ? "DESC" : "ASC") . ", oi.order_item_id ASC
+    ";
+    $result = $db->query($sql);
+    if (!$result) return [];
+    $orders = [];
+    while ($row = $result->fetch_assoc()) {
+        $order_id = $row['order_id'];
+        if (!isset($orders[$order_id])) {
+            $orders[$order_id] = [
+                'order_id' => $order_id, 'table_number' => $row['table_number'], 'status' => $row['status'],
+                'notes' => $row['notes'], 'total_price' => $row['total_price'], 'order_time' => $row['order_time'],
+                'items' => []
+            ];
+        }
+        if ($row['product_name']) {
+            $orders[$order_id]['items'][] = [
+                'quantity' => $row['quantity'], 'product_name' => $row['product_name'], 'variant_name' => $row['variant_name']
+            ];
+        }
+    }
+    return $orders;
+}
+
+$active_orders = getOrdersForAdmin($db, false);
+$history_orders = getOrdersForAdmin($db, true);
+
+// (PERBAIKAN POIN 2) Status hanya untuk Kasir/SA
+$role_statuses = ['Menunggu Pembayaran', 'Kirim ke Dapur', 'Siap Diantar', 'Selesai', 'Dibatalkan'];
+?>
 
 <!DOCTYPE html>
 <html lang="id">
@@ -11,20 +70,20 @@ redirectIfNotLoggedIn('admin_login.php');
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>Admin | Manajemen Pesanan</title>
-    <!-- CSS Utama -->
+    <meta http-equiv="refresh" content="30">
     <link rel="stylesheet" href="css/variable.css">
-    <link rel="stylesheet" href="css/admin_menu.css"> <!-- Menggunakan base admin -->
-    <link rel="stylesheet" href="css/admin_orders.css"> <!-- (FILE CSS BARU) -->
-    <!-- CSS untuk item list (dari pembayaran) -->
+    <link rel="stylesheet" href="css/admin_menu.css">
+    <link rel="stylesheet" href="css/admin_orders.css">
     <link rel="stylesheet" href="css/pembayaran.css"> 
-    <!-- Font & Ikon -->
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
     <link href="https://fonts.googleapis.com/css2?family=Cormorant+Garamond:wght@300;400;600;700&family=Montserrat:wght@300;400;500&display=swap" rel="stylesheet">
+    <style>
+        .status-select:disabled { opacity: 0.5; cursor: not-allowed; background-color: var(--tertiary-color); }
+    </style>
 </head>
 <body>
     
     <div class="admin-layout">
-        <!-- ===== SIDEBAR ===== -->
         <aside class="sidebar" id="sidebar">
             <div class="sidebar-header">
                 <a href="index.php" class="nav-logo">
@@ -32,12 +91,44 @@ redirectIfNotLoggedIn('admin_login.php');
                     <span class="logo-text">BalResplay</span>
                 </a>
             </div>
+            
             <nav class="nav-list">
-                <a href="admin_dashboard.php"><i class="fas fa-tachometer-alt"></i> Dashboard</a>
-                <a href="admin_menu.php"><i class="fas fa-utensils"></i> Menu Cafe</a>
-                <a href="admin_orders.php" class="active"><i class="fas fa-receipt"></i> Pesanan</a>
-                <a href="admin_settings.php"><i class="fas fa-cog"></i> Pengaturan</a>
+                <?php 
+                $currentPage = basename($_SERVER['PHP_SELF']); 
+                ?>
+                
+                <?php if ($role == 'Super Admin' || $role == 'Kasir'): ?>
+                    <a href="admin_dashboard.php" 
+                       class="<?php echo $currentPage == 'admin_dashboard.php' ? 'active' : ''; ?>">
+                       <i class="fas fa-tachometer-alt"></i> Dashboard
+                    </a>
+                <?php endif; ?>
+                
+                <a href="admin_menu.php" 
+                   class="<?php echo ($currentPage == 'admin_menu.php' || $currentPage == 'admin_form_menu.php') ? 'active' : ''; ?>">
+                   <i class="fas fa-utensils"></i> Menu Cafe
+                </a>
+                
+                <?php if ($role == 'Dapur'): ?>
+                     <a href="kitchen_display.php" 
+                       class="<?php echo $currentPage == 'kitchen_display.php' ? 'active' : ''; ?>">
+                       <i class="fas fa-receipt"></i> Antrian Dapur
+                    </a>
+                <?php else: // Super Admin & Kasir ?>
+                    <a href="admin_orders.php" 
+                       class="<?php echo $currentPage == 'admin_orders.php' ? 'active' : ''; ?>">
+                       <i class="fas fa-receipt"></i> Pesanan
+                    </a>
+                <?php endif; ?>
+                
+                <?php if ($role == 'Super Admin'): ?>
+                    <a href="admin_settings.php" 
+                       class="<?php echo $currentPage == 'admin_settings.php' ? 'active' : ''; ?>">
+                       <i class="fas fa-cog"></i> Pengaturan
+                    </a>
+                <?php endif; ?>
             </nav>
+
             <div class="sidebar-footer">
                 <a href="actions/handle_logout.php" class="logout-link">
                     <i class="fas fa-sign-out-alt"></i> Logout
@@ -45,9 +136,7 @@ redirectIfNotLoggedIn('admin_login.php');
             </div>
         </aside>
 
-        <!-- ===== MAIN CONTENT ===== -->
         <main class="main-content">
-            <!-- Header Konten -->
             <header class="admin-header">
                 <button class="hamburger" id="hamburger">
                     <i class="fas fa-bars"></i>
@@ -55,209 +144,241 @@ redirectIfNotLoggedIn('admin_login.php');
                 <h1>Manajemen Pesanan</h1>
             </header>
 
-            <!-- Toolbar Pesanan -->
             <div class="order-toolbar">
                 <button id="toggle-view-btn" class="btn btn-secondary">
                     <i class="fas fa-history"></i> Lihat Riwayat
                 </button>
             </div>
 
-            <!-- Grid Pesanan Aktif -->
             <div class="order-grid" id="active-orders-grid">
                 
-                <!-- CONTOH KARTU PESANAN 1 (Menunggu) -->
-                <div class="order-card" data-status="Menunggu Pembayaran">
-                    <div class="order-card-header">
-                        <div>
-                            <h4>Order #1021</h4>
-                            <span>Meja: <strong>12</strong></span>
-                        </div>
-                        <span class="order-time">10 menit lalu</span>
-                    </div>
-                    
-                    <div class="order-card-body">
-                        <div class="summary-items-list">
-                            <!-- Item pesanan -->
-                            <div class="summary-product-item">
-                                <div class="product-name">
-                                    <span>2x Fried Rice Chicken Grill</span>
+                <?php if (empty($active_orders)): ?>
+                    <h3 style="color: var(--text-muted); grid-column: 1 / -1;">Tidak ada pesanan aktif.</h3>
+                <?php else: ?>
+                    <?php foreach ($active_orders as $order): ?>
+                        <div class="order-card" data-status="<?php echo htmlspecialchars($order['status']); ?>">
+                            <div class="order-card-header">
+                                <div>
+                                    <h4>Order #<?php echo $order['order_id']; ?></h4>
+                                    <span>Meja: <strong><?php echo $order['table_number']; ?></strong></span>
                                 </div>
-                                <span class="product-price">Rp 80.000</span>
+                                <span class="order-time">
+                                    <?php 
+                                        $time_diff = time() - strtotime($order['order_time']);
+                                        if ($time_diff < 3600) echo floor($time_diff / 60) . " menit lalu";
+                                        else if ($time_diff < 86400) echo floor($time_diff / 3600) . " jam lalu";
+                                        else echo date('d M Y, H:i', strtotime($order['order_time']));
+                                    ?>
+                                </span>
                             </div>
-                            <div class="summary-product-item">
-                                <div class="product-name">
-                                    <span>1x Es Kopi Aren</span>
-                                    <small class="product-notes">Catatan: Sedikit gula</small>
+                            <div class="order-card-body">
+                                <div class="summary-items-list">
+                                    <?php if (empty($order['items'])): ?>
+                                        <p style="color: var(--text-muted);">Tidak ada item?</p>
+                                    <?php else: ?>
+                                        <?php foreach ($order['items'] as $item): ?>
+                                            <div class="summary-product-item">
+                                                <div class="product-name">
+                                                    <span><strong><?php echo $item['quantity']; ?>x</strong> <?php echo htmlspecialchars($item['product_name']); ?></span>
+                                                    <?php if (isset($item['variant_name']) && $item['variant_name'] !== null): ?>
+                                                        <small class="product-notes" style="font-style: italic; color: var(--accent-color);">(<?php echo htmlspecialchars($item['variant_name']); ?>)</small>
+                                                    <?php endif; ?>
+                                                </div>
+                                            </div>
+                                        <?php endforeach; ?>
+                                    <?php endif; ?>
+                                    <?php if (!empty($order['notes'])): ?>
+                                        <div class="summary-product-item" style="display: block; border-top: 1px dashed var(--tertiary-color);">
+                                            <div class="product-name">
+                                                <span style="font-weight: bold; color: var(--text-muted);"><i class="fas fa-sticky-note"></i> Catatan:</span>
+                                                <small class="product-notes" style="white-space: pre-wrap;"><?php echo htmlspecialchars($order['notes']); ?></small>
+                                            </div>
+                                        </div>
+                                    <?php endif; ?>
                                 </div>
-                                <span class="product-price">Rp 30.000</span>
                             </div>
-                        </div>
-                    </div>
-                    
-                    <div class="order-card-footer">
-                        <div class="summary-total">
-                            <div class="summary-item grand-total" style="border-top: 1px solid var(--tertiary-color); margin-top: 0;">
-                                <span>Total</span>
-                                <strong>Rp 110.000</strong>
-                            </div>
-                        </div>
-                        <div class="order-card-status">
-                            <span class="status-badge">Menunggu Pembayaran</span>
-                        </div>
-                        <div class="order-card-actions">
-                            <label for="status-1021">Update Status:</label>
-                            <select id="status-1021" name="status" class="status-select" onchange="console.log('Update Order 1021 to: ' + this.value)">
-                                <option value="Menunggu Pembayaran" selected>Menunggu Pembayaran</option>
-                                <option value="Kirim ke Dapur">Kirim ke Dapur</option>
-                                <option value="Sedang Dimasak">Sedang Dimasak</option>
-                                <option value="Siap Diantar">Siap Diantar</option>
-                                <option value="Selesai">Selesai</option>
-                                <option value="Dibatalkan">Dibatalkan</option>
-                            </select>
-                        </div>
-                    </div>
-                </div>
-
-                <!-- CONTOH KARTU PESANAN 2 (Dimasak) -->
-                <div class="order-card" data-status="Sedang Dimasak">
-                    <div class="order-card-header">
-                        <div>
-                            <h4>Order #1020</h4>
-                            <span>Meja: <strong>5</strong></span>
-                        </div>
-                        <span class="order-time">25 menit lalu</span>
-                    </div>
-                    
-                    <div class="order-card-body">
-                        <div class="summary-items-list">
-                            <div class="summary-product-item">
-                                <div class="product-name">
-                                    <span>1x Spaghetti Bolognese</span>
+                            
+                            <div class="order-card-footer">
+                                <div class="summary-total">
+                                    <div class="summary-item grand-total" style="border-top: 1px solid var(--tertiary-color); margin-top: 0;">
+                                        <span>Total</span>
+                                        <strong>Rp <?php echo number_format($order['total_price'], 0, ',', '.'); ?></strong>
+                                    </div>
                                 </div>
-                                <span class="product-price">Rp 35.000</span>
+                                <div class="order-card-status">
+                                    <span class="status-badge"><?php echo htmlspecialchars($order['status']); ?></span>
+                                </div>
+                                
+                                <?php if ($role == 'Kasir' || $role == 'Super Admin'): ?>
+                                    <div class="order-card-actions">
+                                        <label for="status-<?php echo $order['order_id']; ?>">Update Status:</label>
+                                        <select id="status-<?php echo $order['order_id']; ?>" name="status" class="status-select" data-order-id="<?php echo $order['order_id']; ?>"
+                                            <?php 
+                                            $current_status = $order['status'];
+                                            $is_dapur_status = in_array($current_status, ['Kirim ke Dapur', 'Sedang Dimasak']);
+                                            
+                                            if ($role == 'Kasir' && $is_dapur_status) {
+                                                echo 'disabled';
+                                            }
+                                            ?>>
+                                            
+                                            <?php
+                                            $options = [];
+                                            
+                                            if ($role == 'Super Admin') {
+                                                // Super Admin dapat memilih SEMUA status
+                                                $options = ['Menunggu Pembayaran', 'Kirim ke Dapur', 'Sedang Dimasak', 'Siap Diantar', 'Selesai', 'Dibatalkan'];
+                                            } else {
+                                                // Logika Kasir (tetap)
+                                                if ($current_status == 'Menunggu Pembayaran') {
+                                                    $options = ['Menunggu Pembayaran', 'Kirim ke Dapur', 'Dibatalkan'];
+                                                } else if ($is_dapur_status) {
+                                                    $options = [$current_status]; 
+                                                } else if ($current_status == 'Siap Diantar') {
+                                                    $options = ['Siap Diantar', 'Selesai', 'Dibatalkan'];
+                                                }
+                                            }
+                                            
+                                            // Tampilkan opsi yang diizinkan
+                                            foreach ($options as $status) {
+                                                echo "<option value=\"$status\" " . ($current_status == $status ? 'selected' : '') . ">$status</option>";
+                                            }
+                                            ?>
+                                        </select>
+                                    </div>
+                                <?php endif; ?>
                             </div>
                         </div>
-                    </div>
-                    
-                    <div class="order-card-footer">
-                        <div class="summary-total">
-                            <div class="summary-item grand-total" style="border-top: 1px solid var(--tertiary-color); margin-top: 0;">
-                                <span>Total</span>
-                                <strong>Rp 35.000</strong>
-                            </div>
-                        </div>
-                        <div class="order-card-status">
-                            <span class="status-badge">Sedang Dimasak</span>
-                        </div>
-                        <div class="order-card-actions">
-                            <label for="status-1020">Update Status:</label>
-                            <select id="status-1020" name="status" class="status-select" onchange="console.log('Update Order 1020 to: ' + this.value)">
-                                <option value="Menunggu Pembayaran">Menunggu Pembayaran</option>
-                                <option value="Kirim ke Dapur">Kirim ke Dapur</option>
-                                <option value="Sedang Dimasak" selected>Sedang Dimasak</option>
-                                <option value="Siap Diantar">Siap Diantar</option>
-                                <option value="Selesai">Selesai</option>
-                                <option value="Dibatalkan">Dibatalkan</option>
-                            </select>
-                        </div>
-                    </div>
-                </div>
-                
-                <!-- ... Kartu pesanan aktif lainnya ... -->
-
+                    <?php endforeach; ?>
+                <?php endif; ?>
             </div>
 
-            <!-- Grid Riwayat Pesanan (Hidden by default) -->
             <div class="order-grid" id="history-orders-grid" style="display: none;">
-                
-                <!-- CONTOH KARTU RIWAYAT 1 (Selesai) -->
-                <div class="order-card" data-status="Selesai">
-                    <div class="order-card-header">
-                        <div>
-                            <h4>Order #980</h4>
-                            <span>Meja: <strong>7</strong></span>
-                        </div>
-                        <span class="order-time">06 Nov 2025</span>
-                    </div>
-                    <div class="order-card-footer">
-                        <div class="summary-total">
-                            <div class="summary-item grand-total" style="border-top: none; margin-top: 0; padding-top: 0;">
-                                <span>Total Dibayar</span>
-                                <strong>Rp 75.000</strong>
+                <?php if (empty($history_orders)): ?>
+                    <h3 style="color: var(--text-muted); grid-column: 1 / -1;">Tidak ada riwayat pesanan.</h3>
+                <?php else: ?>
+                    <?php foreach ($history_orders as $order): ?>
+                        <div class="order-card" data-status="<?php echo htmlspecialchars($order['status']); ?>">
+                            <div class="order-card-header">
+                                <div>
+                                    <h4>Order #<?php echo $order['order_id']; ?></h4>
+                                    <span>Meja: <strong><?php echo $order['table_number']; ?></strong></span>
+                                </div>
+                                <span class="order-time"><?php echo date('d M Y, H:i', strtotime($order['order_time'])); ?></span>
+                            </div>
+                            <div class="order-card-footer">
+                                <div class="summary-total">
+                                    <div class="summary-item grand-total" style="border-top: none; margin-top: 0; padding-top: 0;">
+                                        <span>Total Dibayar</span>
+                                        <strong>Rp <?php echo number_format($order['total_price'], 0, ',', '.'); ?></strong>
+                                    </div>
+                                </div>
+                                <div class="order-card-status">
+                                    <span class="status-badge"><?php echo htmlspecialchars($order['status']); ?></span>
+                                </div>
                             </div>
                         </div>
-                        <div class="order-card-status">
-                            <span class="status-badge">Selesai</span>
-                        </div>
-                    </div>
-                </div>
-
-                <!-- CONTOH KARTU RIWAYAT 2 (Dibatalkan) -->
-                <div class="order-card" data-status="Dibatalkan">
-                    <div class="order-card-header">
-                        <div>
-                            <h4>Order #979</h4>
-                            <span>Meja: <strong>3</strong></span>
-                        </div>
-                        <span class="order-time">06 Nov 2025</span>
-                    </div>
-                    <div class="order-card-footer">
-                         <div class="summary-total">
-                            <div class="summary-item grand-total" style="border-top: none; margin-top: 0; padding-top: 0;">
-                                <span>Total</span>
-                                <strong>Rp 45.000</strong>
-                            </div>
-                        </div>
-                        <div class="order-card-status">
-                            <span class="status-badge">Dibatalkan</span>
-                        </div>
-                    </div>
-                </div>
-
-                <!-- ... Kartu riwayat lainnya ... -->
+                    <?php endforeach; ?>
+                <?php endif; ?>
             </div>
-
         </main>
         
         <div class="sidebar-overlay" id="sidebar-overlay"></div>
+
+        <div id="refresh-bar"></div>
     </div>
 
     <script>
         document.addEventListener('DOMContentLoaded', () => {
-            // --- Logika Sidebar Hamburger ---
+            // Sidebar
             const hamburger = document.getElementById('hamburger');
             const sidebar = document.getElementById('sidebar');
             const overlay = document.getElementById('sidebar-overlay');
+            if (hamburger) hamburger.addEventListener('click', () => sidebar.classList.add('show'));
+            if (overlay) overlay.addEventListener('click', () => sidebar.classList.remove('show'));
 
-            if (hamburger) {
-                hamburger.addEventListener('click', () => {
-                    sidebar.classList.add('show');
-                });
-            }
-            if (overlay) {
-                overlay.addEventListener('click', () => {
-                    sidebar.classList.remove('show');
-                });
-            }
-
-            // --- Logika Toggle Riwayat Pesanan ---
+            // Toggle Riwayat
             const toggleBtn = document.getElementById('toggle-view-btn');
             const activeGrid = document.getElementById('active-orders-grid');
             const historyGrid = document.getElementById('history-orders-grid');
             let isShowingHistory = false;
-
             if (toggleBtn) {
                 toggleBtn.addEventListener('click', () => {
                     isShowingHistory = !isShowingHistory;
-                    
                     if (isShowingHistory) {
                         activeGrid.style.display = 'none';
-                        historyGrid.style.display = 'grid'; // atau 'flex' jika Anda gunakan flex
+                        historyGrid.style.display = 'grid';
                         toggleBtn.innerHTML = '<i class="fas fa-clipboard-list"></i> Lihat Pesanan Aktif';
                     } else {
-                        activeGrid.style.display = 'grid'; // atau 'flex'
+                        activeGrid.style.display = 'grid';
                         historyGrid.style.display = 'none';
                         toggleBtn.innerHTML = '<i class="fas fa-history"></i> Lihat Riwayat';
+                    }
+                });
+            }
+
+            // LOGIKA UPDATE STATUS DENGAN KONFIRMASI
+            const activeOrdersGrid = document.getElementById('active-orders-grid');
+            if (activeOrdersGrid) {
+                activeOrdersGrid.addEventListener('change', (e) => {
+                    if (e.target.classList.contains('status-select')) {
+                        const selectElement = e.target;
+                        const orderId = selectElement.dataset.orderId;
+                        const newStatus = selectElement.value;
+                        const card = selectElement.closest('.order-card');
+                        const originalStatus = card.dataset.status;
+                        
+                        // Logika Konfirmasi Pop-up
+                        let isConfirmed = true;
+                        if (newStatus === 'Selesai') {
+                            // Mengembalikan alert Selesai
+                            isConfirmed = confirm(`Anda yakin ingin menyelesaikan Pesanan #${orderId}? Pesanan akan dipindahkan ke riwayat.`);
+                        } else if (newStatus === 'Dibatalkan') {
+                            // Mengembalikan alert Dibatalkan
+                            isConfirmed = confirm(`ANDA YAKIN ingin membatalkan Pesanan #${orderId}? Aksi ini tidak dapat diurungkan.`);
+                        } else if (newStatus !== originalStatus) {
+                            // Mengembalikan alert perubahan status lainnya
+                            isConfirmed = confirm(`Anda yakin ingin mengubah status Pesanan #${orderId} dari ${originalStatus} menjadi ${newStatus}?`);
+                        }
+
+                        if (!isConfirmed) {
+                            selectElement.value = originalStatus;
+                            return; 
+                        }
+                        
+                        selectElement.disabled = true;
+                        const payload = { order_id: orderId, status: newStatus };
+
+                        fetch('actions/update_order_status.php', {
+                            method: 'POST',
+                            headers: { 'Content-Type': 'application/json' },
+                            body: JSON.stringify(payload)
+                        })
+                        .then(response => response.json())
+                        .then(data => {
+                            if (data.status === 'success') {
+                                if (newStatus === 'Selesai' || newStatus === 'Dibatalkan') {
+                                     // Mengembalikan alert sukses Selesai/Batal
+                                     alert('Status diperbarui! Pesanan dipindahkan ke Riwayat.');
+                                } else {
+                                     // Mengembalikan alert sukses biasa
+                                     alert('Status diperbarui!');
+                                }
+                                window.location.reload();
+                            } else {
+                                // Mengembalikan alert gagal
+                                alert('Gagal: ' + data.message);
+                                selectElement.value = originalStatus;
+                                selectElement.disabled = false;
+                            }
+                        })
+                        .catch(error => {
+                            console.error('Error:', error);
+                            // Mengembalikan alert koneksi bermasalah
+                            alert('Terjadi kesalahan koneksi.');
+                            selectElement.value = originalStatus;
+                            selectElement.disabled = false;
+                        });
                     }
                 });
             }

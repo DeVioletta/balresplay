@@ -9,6 +9,14 @@
     <link rel="stylesheet" href="css/pembayaran.css">
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
     <link href="https://fonts.googleapis.com/css2?family=Cormorant+Garamond:wght@300;400;600;700&family=Montserrat:wght@300;400;500&display=swap" rel="stylesheet">
+    <style>
+        /* (BARU) Style untuk tombol yang dinonaktifkan */
+        .btn-confirm-order:disabled {
+            background-color: var(--tertiary-color);
+            cursor: not-allowed;
+            opacity: 0.7;
+        }
+    </style>
 </head>
 
 <body>
@@ -22,17 +30,14 @@
         </div>
 
         <div class="payment-content">
-            <!-- Kolom Ringkasan Pesanan -->
             <div class="order-summary-card">
                 <h3>Ringkasan Pesanan</h3>
                 <div class="summary-details">
                     <div class="summary-item">
                         <span>Nomor Meja</span>
-                        <strong id="summary-table-number">12</strong>
-                    </div>
+                        <strong id="summary-table-number">...</strong> </div>
                 </div>
                 <div class="summary-items-list" id="summary-items-list">
-                    <!-- Item pesanan akan dimuat di sini oleh JavaScript -->
                     <p>Memuat pesanan...</p>
                 </div>
                 <div class="summary-total">
@@ -42,8 +47,7 @@
                     </div>
                     <div class="summary-item">
                         <span>Biaya Layanan</span>
-                        <span>Rp 2.000</span>
-                    </div>
+                        <span>Rp 2.000</span> </div>
                     <div class="summary-item grand-total">
                         <span>Total Pembayaran</span>
                         <strong id="summary-grand-total">Rp 0</strong>
@@ -51,7 +55,6 @@
                 </div>
             </div>
 
-            <!-- Kolom Metode Pembayaran -->
             <div class="payment-method-card">
                 <h3>Pilih Metode Pembayaran</h3>
                 <div class="payment-options">
@@ -80,7 +83,7 @@
                 <div class="payment-instructions">
                     <div id="qris-content" class="instruction-content active">
                         <h4>Pembayaran QRIS</h4>
-                        <img src="https://placehold.co/250x250/f5f5f5/0f0f0f?text=QRIS" alt="QR Code" class="qris-image">
+                        <img src="https://placehold.co/250x250/f5f5f5/0f0f0f?text=QRIS+Dinamis" alt="QR Code" class="qris-image">
                         <p>Silakan pindai kode QR di atas menggunakan aplikasi pembayaran favorit Anda.</p>
                     </div>
                     <div id="cash-content" class="instruction-content">
@@ -89,7 +92,7 @@
                     </div>
                 </div>
 
-                 <button class="btn btn-primary btn-confirm-order">
+                 <button class="btn btn-primary btn-confirm-order" id="confirm-order-btn">
                     Konfirmasi Pesanan
                 </button>
             </div>
@@ -102,27 +105,29 @@
 
 <script>
 document.addEventListener('DOMContentLoaded', () => {
-    // Ambil data dari sessionStorage
+    // (Logika Bagian 1 & 2 - Memuat keranjang & Opsi Pembayaran)
     const cartData = JSON.parse(sessionStorage.getItem('cartData'));
     const totalPrice = sessionStorage.getItem('cartTotalPrice');
-    const tableNumber = sessionStorage.getItem('tableNumber') || '12'; // Default ke 12 jika tidak ada
-
+    const tableNumber = sessionStorage.getItem('tableNumber') || '1'; 
     const summaryItemsList = document.getElementById('summary-items-list');
     const summarySubtotal = document.getElementById('summary-subtotal');
     const summaryGrandTotal = document.getElementById('summary-grand-total');
     const summaryTableNumber = document.getElementById('summary-table-number');
-
+    const serviceFee = 2000;
+    
+    let subtotal = 0;
+    let grandTotal = serviceFee;
+    
     if (cartData && cartData.length > 0) {
-        summaryItemsList.innerHTML = ''; // Kosongkan
+        subtotal = parseFloat(totalPrice);
+        grandTotal = subtotal + serviceFee;
+        
+        summaryItemsList.innerHTML = ''; 
         cartData.forEach(item => {
             const itemElement = document.createElement('div');
             itemElement.classList.add('summary-product-item');
-            
             let itemName = `${item.quantity}x ${item.name}`;
-            if (item.variant) {
-                itemName += ` (${item.variant})`;
-            }
-
+            if (item.variant) { itemName += ` (${item.variant})`; }
             itemElement.innerHTML = `
                 <div class="product-name">
                     <span>${itemName}</span>
@@ -133,22 +138,17 @@ document.addEventListener('DOMContentLoaded', () => {
             summaryItemsList.appendChild(itemElement);
         });
 
-        const serviceFee = 2000;
-        const subtotal = parseFloat(totalPrice);
-        const grandTotal = subtotal + serviceFee;
-
         summaryTableNumber.textContent = tableNumber;
         summarySubtotal.textContent = `Rp ${subtotal.toLocaleString('id-ID')}`;
         summaryGrandTotal.textContent = `Rp ${grandTotal.toLocaleString('id-ID')}`;
     } else {
         summaryItemsList.innerHTML = '<p>Keranjang Anda kosong. Silakan kembali ke menu untuk memesan.</p>';
+        document.getElementById('confirm-order-btn').disabled = true;
     }
-
-    // Logika untuk pilihan metode pembayaran
+    
     const paymentRadios = document.querySelectorAll('input[name="payment_method"]');
     const qrisContent = document.getElementById('qris-content');
     const cashContent = document.getElementById('cash-content');
-
     paymentRadios.forEach(radio => {
         radio.addEventListener('change', (e) => {
             if (e.target.value === 'qris') {
@@ -161,36 +161,84 @@ document.addEventListener('DOMContentLoaded', () => {
         });
     });
 
-    // --- LOGIKA BARU UNTUK KONFIRMASI PESANAN ---
-    const confirmOrderBtn = document.querySelector('.btn-confirm-order');
+    // === LOGIKA KONFIRMASI PESANAN ===
+    const confirmOrderBtn = document.getElementById('confirm-order-btn');
 
     confirmOrderBtn.addEventListener('click', () => {
+        confirmOrderBtn.disabled = true;
+        confirmOrderBtn.textContent = 'Memproses...';
+
         const currentCartData = JSON.parse(sessionStorage.getItem('cartData'));
+        const currentTableNumber = sessionStorage.getItem('tableNumber') || '1';
+        const selectedPaymentMethod = document.querySelector('input[name="payment_method"]:checked').value;
         
         if (currentCartData && currentCartData.length > 0) {
-            // Buat objek pesanan dengan status awal
-            const order = {
-                items: currentCartData,
-                status: 'Menunggu Konfirmasi',
-                orderTime: new Date().getTime() // Simpan waktu pemesanan untuk simulasi
+            
+            const payload = {
+                cartData: currentCartData,
+                tableNumber: currentTableNumber,
+                paymentMethod: selectedPaymentMethod === 'qris' ? 'QRIS' : 'Cash' 
             };
 
-            // Simpan data pesanan ke sessionStorage
-            sessionStorage.setItem('orderStatusData', JSON.stringify(order));
-            
-            // Hapus data keranjang lama
-            sessionStorage.removeItem('cartData');
-            sessionStorage.removeItem('cartTotalPrice');
+            fetch('actions/handle_order.php', {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify(payload)
+            })
+            .then(response => response.json())
+            .then(data => {
+                if (data.status === 'success') {
+                    const tableNumForRedirect = sessionStorage.getItem('tableNumber') || '1';
+                    
+                    const temporaryOrderData = {
+                        order_id: data.order_id,
+                        status: 'Menunggu Pembayaran',
+                        items: currentCartData.map(item => ({
+                            product_name: item.name,
+                            variant: item.variant,
+                            quantity: parseInt(item.quantity),
+                            price_per_item: parseFloat(item.price), 
+                            subtotal: parseFloat(item.price) * parseInt(item.quantity), 
+                        })),
+                        total_price: grandTotal, 
+                        notes: currentCartData.map(item => 
+                            item.notes ? `${item.name}: ${item.notes}` : ''
+                        ).filter(note => note).join('; ')
+                    };
 
-            // Arahkan kembali ke halaman menu
-            window.location.href = 'menu.php';
+                    const orderStatusKey = `orderStatusData_MEJA_${tableNumForRedirect}`;
+                    sessionStorage.setItem(orderStatusKey, JSON.stringify(temporaryOrderData));
+                    
+                    sessionStorage.removeItem('cartData');
+                    sessionStorage.removeItem('cartTotalPrice');
+
+                    // Redirect dengan parameter sukses
+                    window.location.href = `menu.php?meja=${tableNumForRedirect}&order=success&id=${data.order_id}`;
+
+                } else {
+                    // Mengembalikan alert kegagalan konfirmasi
+                    alert('BalResplay: Gagal membuat pesanan: ' + data.message);
+                    confirmOrderBtn.disabled = false;
+                    confirmOrderBtn.textContent = 'Konfirmasi Pesanan';
+                }
+            })
+            .catch(error => {
+                console.error('Error:', error);
+                // Mengembalikan alert koneksi bermasalah
+                alert('BalResplay: Terjadi kesalahan koneksi. Silakan coba lagi.');
+                confirmOrderBtn.disabled = false;
+                confirmOrderBtn.textContent = 'Konfirmasi Pesanan';
+            });
         } else {
-            // Seharusnya tidak terjadi jika user datang dari menu, tapi sebagai pengaman
-            alert('Tidak ada item untuk dikonfirmasi.');
+            // Mengembalikan alert keranjang kosong
+            alert('BalResplay: Tidak ada item untuk dikonfirmasi.');
+            confirmOrderBtn.disabled = false;
+            confirmOrderBtn.textContent = 'Konfirmasi Pesanan';
             window.location.href = 'menu.php';
         }
     });
 });
 </script>
+
 </body>
 </html>

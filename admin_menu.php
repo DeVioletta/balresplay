@@ -3,13 +3,19 @@ require_once __DIR__ . '/config/database.php';
 startSecureSession();
 redirectIfNotLoggedIn('admin_login.php');
 
-// (DIPERBARUI) Ambil semua data produk dari database (sekarang termasuk is_available)
+// (PERBAIKAN POIN 2) Role check: Boleh diakses Kasir, Dapur, Super Admin
+$role = $_SESSION['role'];
+if ($role !== 'Kasir' && $role !== 'Super Admin' && $role !== 'Dapur') {
+    $_SESSION['error_message'] = 'Anda tidak memiliki izin untuk melihat halaman Menu.';
+    header("Location: admin_login.php"); // Tendang ke login
+    exit();
+}
+
 $products = getAllProductsWithVariants($db);
-// (BARU) Ambil semua kategori unik untuk filter
 $categories = getAllCategories($db);
 
-// (BARU) Logika pesan sukses/error dari aksi delete/update
 $message = '';
+// ... (logika $message tidak berubah)
 if (isset($_GET['success'])) {
     if ($_GET['success'] == 'deleted') $message = '<div class="admin-message success">Menu berhasil dihapus.</div>';
     if ($_GET['success'] == 'updated') $message = '<div class="admin-message success">Menu berhasil diperbarui.</div>';
@@ -20,7 +26,6 @@ if (isset($_GET['error'])) {
     if ($_GET['error'] == 'notfound') $message = '<div class="admin-message error">Produk tidak ditemukan.</div>';
 }
 ?>
-
 
 <!DOCTYPE html>
 <html lang="id">
@@ -33,21 +38,17 @@ if (isset($_GET['error'])) {
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
     <link href="https://fonts.googleapis.com/css2?family=Cormorant+Garamond:wght@300;400;600;700&family=Montserrat:wght@300;400;500&display=swap" rel="stylesheet">
     <style>
-        /* (BARU) CSS untuk pesan error/sukses (diambil dari admin_settings) */
-        .admin-message {
-            padding: 15px;
-            border-radius: 5px;
-            margin-bottom: 20px;
-            font-weight: 500;
+        .admin-message { padding: 15px; border-radius: 5px; margin-bottom: 20px; font-weight: 500; }
+        .admin-message.success { background-color: var(--success-color); color: var(--light-text); }
+        .admin-message.error { background-color: var(--danger-color); color: var(--light-text); }
+        /* (BARU) Style untuk tombol nonaktif */
+        .btn-edit:disabled, .btn-delete:disabled {
+            background-color: var(--tertiary-color);
+            cursor: not-allowed;
+            opacity: 0.6;
         }
-        .admin-message.success {
-            background-color: var(--success-color);
-            color: var(--light-text);
-        }
-        .admin-message.error {
-            background-color: var(--danger-color);
-            color: var(--light-text);
-        }
+        .btn-delete:disabled:hover { background-color: var(--tertiary-color); }
+        .btn-edit:disabled:hover { background-color: var(--tertiary-color); }
     </style>
 </head>
 <body>
@@ -60,12 +61,44 @@ if (isset($_GET['error'])) {
                     <span class="logo-text">BalResplay</span>
                 </a>
             </div>
+            
             <nav class="nav-list">
-                <a href="admin_dashboard.php"><i class="fas fa-tachometer-alt"></i> Dashboard</a>
-                <a href="admin_menu.php" class="active"><i class="fas fa-utensils"></i> Menu Cafe</a>
-                <a href="admin_orders.php"><i class="fas fa-receipt"></i> Pesanan</a>
-                <a href="admin_settings.php"><i class="fas fa-cog"></i> Pengaturan</a>
+                <?php 
+                $currentPage = basename($_SERVER['PHP_SELF']); 
+                ?>
+                
+                <?php if ($role == 'Super Admin' || $role == 'Kasir'): ?>
+                    <a href="admin_dashboard.php" 
+                       class="<?php echo $currentPage == 'admin_dashboard.php' ? 'active' : ''; ?>">
+                       <i class="fas fa-tachometer-alt"></i> Dashboard
+                    </a>
+                <?php endif; ?>
+                
+                <a href="admin_menu.php" 
+                   class="<?php echo ($currentPage == 'admin_menu.php' || $currentPage == 'admin_form_menu.php') ? 'active' : ''; ?>">
+                   <i class="fas fa-utensils"></i> Menu Cafe
+                </a>
+                
+                <?php if ($role == 'Dapur'): ?>
+                     <a href="kitchen_display.php" 
+                       class="<?php echo $currentPage == 'kitchen_display.php' ? 'active' : ''; ?>">
+                       <i class="fas fa-receipt"></i> Antrian Dapur
+                    </a>
+                <?php else: // Super Admin & Kasir ?>
+                    <a href="admin_orders.php" 
+                       class="<?php echo $currentPage == 'admin_orders.php' ? 'active' : ''; ?>">
+                       <i class="fas fa-receipt"></i> Pesanan
+                    </a>
+                <?php endif; ?>
+                
+                <?php if ($role == 'Super Admin'): ?>
+                    <a href="admin_settings.php" 
+                       class="<?php echo $currentPage == 'admin_settings.php' ? 'active' : ''; ?>">
+                       <i class="fas fa-cog"></i> Pengaturan
+                    </a>
+                <?php endif; ?>
             </nav>
+
             <div class="sidebar-footer">
                 <a href="actions/handle_logout.php" class="logout-link">
                     <i class="fas fa-sign-out-alt"></i> Logout
@@ -81,13 +114,11 @@ if (isset($_GET['error'])) {
                 <h1>Manajemen Menu</h1>
             </header>
 
-            <!-- (BARU) Tampilkan pesan sukses/error -->
             <?php echo $message; ?>
 
             <div class="menu-toolbar">
                 <div class="filter-group">
                     <label for="category-filter">Filter Kategori:</label>
-                    <!-- (DIPERBARUI) Select filter sekarang dinamis -->
                     <select id="category-filter" name="kategori">
                         <option value="all">Semua Kategori</option>
                         <?php foreach ($categories as $cat): ?>
@@ -97,27 +128,25 @@ if (isset($_GET['error'])) {
                         <?php endforeach; ?>
                     </select>
                 </div>
+                <?php if ($role == 'Super Admin' || $role == 'Kasir'): ?>
                 <a href="admin_form_menu.php" class="btn btn-primary">
                     <i class="fas fa-plus"></i> Tambah Menu
                 </a>
+                <?php endif; ?>
             </div>
 
-            <div class="admin-menu-grid">
-                
+            <div class="admin-menu-grid"> 
                 <?php if (empty($products)): ?>
                     <p>Belum ada menu yang ditambahkan.</p>
                 <?php else: ?>
                     <?php foreach ($products as $product): ?>
                         <?php
-                            // Logika placeholder
                             $image_url = !empty($product['image_url']) 
                                 ? htmlspecialchars($product['image_url']) 
                                 : 'https://placehold.co/300x300/e8e4d8/5c6e58?text=' . urlencode($product['name']);
                             
-                            // (BARU) Logika cek ketersediaan
                             $all_variants_unavailable = true;
                             if (empty($product['variants'])) {
-                                // Jika tidak ada varian, anggap saja tidak tersedia (atau bisa juga true)
                                 $all_variants_unavailable = true; 
                             } else {
                                 foreach ($product['variants'] as $variant) {
@@ -128,13 +157,11 @@ if (isset($_GET['error'])) {
                                 }
                             }
                         ?>
-                        <!-- (DIPERBARUI) Menambahkan data-category untuk JS -->
                         <div class="menu-item" 
                              data-product-id="<?php echo $product['product_id']; ?>" 
                              data-category="<?php echo htmlspecialchars($product['category']); ?>">
                             
                             <div class="item-image">
-                                <!-- (BARU) Badge Ketersediaan -->
                                 <?php if ($all_variants_unavailable): ?>
                                     <div class="availability-badge unavailable">HABIS</div>
                                 <?php endif; ?>
@@ -148,17 +175,22 @@ if (isset($_GET['error'])) {
                                     <span class="item-category-badge"><?php echo htmlspecialchars($product['category']); ?></span>
                                 </div>
                             </div>
+                            
                             <div class="item-actions">
                                 <a href="admin_form_menu.php?id=<?php echo $product['product_id']; ?>" class="btn btn-edit">
-                                    <i class="fas fa-edit"></i> Edit
+                                    <i class="fas fa-edit"></i> 
+                                    <?php echo ($role == 'Dapur' ? 'Edit Stok' : 'Edit'); // Ganti teks tombol untuk Dapur ?>
                                 </a>
-                                <!-- (DIPERBARUI) Menambahkan data-name untuk pesan konfirmasi -->
+                                
+                                <?php if ($role == 'Super Admin' || $role == 'Kasir'): ?>
                                 <button class="btn btn-delete" 
                                         data-id="<?php echo $product['product_id']; ?>"
                                         data-name="<?php echo htmlspecialchars($product['name']); ?>">
                                     <i class="fas fa-trash"></i> Hapus
                                 </button>
+                                <?php endif; ?>
                             </div>
+
                         </div>
                     <?php endforeach; ?>
                 <?php endif; ?>
@@ -173,60 +205,41 @@ if (isset($_GET['error'])) {
         document.addEventListener('DOMContentLoaded', () => {
             const hamburger = document.getElementById('hamburger');
             const sidebar = document.getElementById('sidebar');
-            const overlay = document.getElementById('sidebar-overlay'); // (BARU)
+            const overlay = document.getElementById('sidebar-overlay');
+            if (hamburger) hamburger.addEventListener('click', () => sidebar.classList.add('show'));
+            if (overlay) overlay.addEventListener('click', () => sidebar.classList.remove('show'));
 
-            hamburger.addEventListener('click', () => {
-                sidebar.classList.add('show'); // (DIUBAH) Hanya menambah 'show'
-            });
-
-            // (BARU) Klik overlay untuk menutup sidebar
-            overlay.addEventListener('click', () => {
-                sidebar.classList.remove('show');
-            });
-
-            // (LOGIKA BARU) Logika untuk filter kategori
+            // Filter Kategori (Tidak Berubah)
             const categoryFilter = document.getElementById('category-filter');
             if (categoryFilter) {
                 categoryFilter.addEventListener('change', (e) => {
                     const selectedCategory = e.currentTarget.value;
                     const allItems = document.querySelectorAll('.admin-menu-grid .menu-item');
-
                     allItems.forEach(item => {
                         const itemCategory = item.dataset.category;
-                        
-                        // Cek jika item harus ditampilkan
                         if (selectedCategory === 'all' || itemCategory === selectedCategory) {
-                            item.style.display = 'flex'; // Gunakan 'flex' karena .menu-item adalah flexbox
+                            item.style.display = 'flex';
                         } else {
-                            item.style.display = 'none'; // Sembunyikan item
+                            item.style.display = 'none';
                         }
                     });
                 });
             }
 
-
-            // (DIPERBARUI) Logika tombol hapus sekarang memanggil file backend
+            // Hapus Menu (Tidak Berubah)
             document.querySelectorAll('.btn-delete').forEach(button => {
                 button.addEventListener('click', (e) => {
                     const id = e.currentTarget.dataset.id;
                     const name = e.currentTarget.dataset.name;
-                    
-                    const isConfirmed = confirm(`Apakah Anda yakin ingin menghapus menu "${name}" (ID: ${id})?`);
+                    const isConfirmed = confirm(`Apakah Anda yakin ingin menghapus menu "${name}"?`);
                     
                     if (isConfirmed) {
-                        // Kirim request ke backend
-                        fetch(`actions/delete_menu.php?id=${id}`, {
-                            method: 'GET'
-                        })
+                        fetch(`actions/delete_menu.php?id=${id}`, { method: 'GET' })
                         .then(response => response.json())
                         .then(data => {
                             if (data.status === 'success') {
-                                // Hapus elemen dari DOM
-                                // e.currentTarget.closest('.menu-item').remove();
-                                // (Lebih baik) Reload halaman untuk menampilkan pesan sukses
                                 window.location.href = 'admin_menu.php?success=deleted';
                             } else {
-                                // Tampilkan pesan error
                                 window.location.href = 'admin_menu.php?error=' + (data.message || 'deletefailed');
                             }
                         })
