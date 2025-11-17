@@ -3,14 +3,28 @@ require_once __DIR__ . '/config/database.php';
 startSecureSession();
 redirectIfNotLoggedIn('admin_login.php');
 
-// (PERBAIKAN POIN 2) Cek Otorisasi
-if ($_SESSION['role'] !== 'Super Admin') {
+$role = $_SESSION['role'];
+if ($role !== 'Super Admin') {
     $_SESSION['error_message'] = 'Halaman Pengaturan hanya bisa diakses oleh Super Admin.';
-    header("Location: admin_dashboard.php");
+    if ($role == 'Kasir') header("Location: admin_dashboard.php");
+    else if ($role == 'Dapur') header("Location: admin_menu.php");
+    else header("Location: admin_login.php");
     exit();
 }
-// ... (sisa kode PHP tidak berubah)
-$users_result = getAllAdminUsers($db);
+
+// Ambil data user (tidak berubah)
+$users_result = getAllAdminUsers($db); //
+
+// (BARU) Ambil data pengaturan
+$settings_result = $db->query("SELECT * FROM settings");
+$settings = [];
+while ($row = $settings_result->fetch_assoc()) {
+    $settings[$row['setting_key']] = $row['setting_value'];
+}
+$table_count = $settings['table_count'] ?? '20'; // Default '20'
+
+
+// Logika pesan notifikasi (DIUPDATE)
 $message = '';
 $message_type = '';
 if (isset($_GET['error'])) {
@@ -21,6 +35,7 @@ if (isset($_GET['error'])) {
     if ($error == 'selfdelete') $message = 'Anda tidak dapat menghapus akun Anda sendiri.';
     if ($error == 'unauthorized') $message = 'Anda tidak memiliki izin untuk melakukan aksi ini.';
     if ($error == 'failed') $message = 'Terjadi kesalahan. Silakan coba lagi.';
+    if ($error == 'invalid_number') $message = 'Jumlah meja harus berupa angka positif.'; // (BARU)
 }
 if (isset($_GET['success'])) {
     $success = $_GET['success'];
@@ -28,6 +43,7 @@ if (isset($_GET['success'])) {
     if ($success == 'created') $message = 'Akun baru berhasil dibuat. Status: Nonaktif.';
     if ($success == 'deleted') $message = 'Akun berhasil dihapus.';
     if ($success == 'updated') $message = 'Akun berhasil diperbarui.';
+    if ($success == 'settings_updated') $message = 'Pengaturan berhasil disimpan.'; // (BARU)
 }
 ?>
 
@@ -38,19 +54,12 @@ if (isset($_GET['success'])) {
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>Admin | Pengaturan Akun</title>
     <link rel="stylesheet" href="css/variable.css">
-    <link rel="stylesheet" href="css/admin_menu.css">
-    <link rel="stylesheet" href="css/admin_settings.css">
-    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+    <link rel="stylesheet" href="css/admin_menu.css"> <link rel="stylesheet" href="css/admin_settings.css"> <link rel="stylesheet" href="css/menu_form.css"> <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
     <link href="https://fonts.googleapis.com/css2?family=Cormorant+Garamond:wght@300;400;600;700&family=Montserrat:wght@300;400;500&display=swap" rel="stylesheet">
     <style>
-        /* (DIUBAH) Style pesan notifikasi */
-        .admin-message {
-            padding: 15px; border-radius: 5px; margin-bottom: 20px; font-weight: 500;
-        }
+        .admin-message { padding: 15px; border-radius: 5px; margin-bottom: 20px; font-weight: 500; }
         .admin-message.success { background-color: var(--success-color); color: var(--light-text); }
         .admin-message.error { background-color: var(--danger-color); color: var(--light-text); }
-        
-        /* (BARU) Style untuk Switch Toggle Status */
         .switch { position: relative; display: inline-block; width: 50px; height: 28px; }
         .switch input { opacity: 0; width: 0; height: 0; }
         .slider { position: absolute; cursor: pointer; top: 0; left: 0; right: 0; bottom: 0; background-color: var(--tertiary-color); transition: .4s; }
@@ -60,6 +69,23 @@ if (isset($_GET['success'])) {
         .slider.round { border-radius: 34px; }
         .slider.round:before { border-radius: 50%; }
         .form-group-toggle { display: flex; align-items: center; justify-content: space-between; margin-top: 15px; }
+        
+        /* (BARU) Style untuk card pengaturan */
+        .settings-card {
+            background-color: var(--darker-bg);
+            border: 1px solid var(--tertiary-color);
+            border-radius: 10px;
+            margin-bottom: 30px;
+        }
+        .settings-card h4 {
+            font-size: 1.5rem;
+            margin: 0;
+            padding: 24px 30px;
+            border-bottom: 1px solid var(--tertiary-color);
+        }
+        .settings-card form {
+            padding: 24px 30px;
+        }
     </style>
 </head>
 <body>
@@ -74,48 +100,23 @@ if (isset($_GET['success'])) {
             </div>
             
             <nav class="nav-list">
-                <?php 
-                // Ambil role dan halaman saat ini
-                $role = $_SESSION['role']; 
-                $currentPage = basename($_SERVER['PHP_SELF']); 
-                ?>
-                
+                <?php $currentPage = basename($_SERVER['PHP_SELF']); ?>
                 <?php if ($role == 'Super Admin' || $role == 'Kasir'): ?>
-                    <a href="admin_dashboard.php" 
-                       class="<?php echo $currentPage == 'admin_dashboard.php' ? 'active' : ''; ?>">
-                       <i class="fas fa-tachometer-alt"></i> Dashboard
-                    </a>
+                    <a href="admin_dashboard.php" class="<?php echo $currentPage == 'admin_dashboard.php' ? 'active' : ''; ?>"><i class="fas fa-tachometer-alt"></i> Dashboard</a>
                 <?php endif; ?>
-                
-                <a href="admin_menu.php" 
-                   class="<?php echo ($currentPage == 'admin_menu.php' || $currentPage == 'admin_form_menu.php') ? 'active' : ''; ?>">
-                   <i class="fas fa-utensils"></i> Menu Cafe
-                </a>
-                
+                <a href="admin_menu.php" class="<?php echo ($currentPage == 'admin_menu.php' || $currentPage == 'admin_form_menu.php') ? 'active' : ''; ?>"><i class="fas fa-utensils"></i> Menu Cafe</a>
                 <?php if ($role == 'Dapur'): ?>
-                    <a href="kitchen_display.php" 
-                       class="<?php echo $currentPage == 'kitchen_display.php' ? 'active' : ''; ?>">
-                       <i class="fas fa-receipt"></i> Antrian Dapur
-                    </a>
-                <?php else: // Super Admin & Kasir melihat Admin Orders ?>
-                    <a href="admin_orders.php" 
-                       class="<?php echo $currentPage == 'admin_orders.php' ? 'active' : ''; ?>">
-                       <i class="fas fa-receipt"></i> Pesanan
-                    </a>
+                     <a href="kitchen_display.php" class="<?php echo $currentPage == 'kitchen_display.php' ? 'active' : ''; ?>"><i class="fas fa-receipt"></i> Antrian Dapur</a>
+                <?php else: ?>
+                    <a href="admin_orders.php" class="<?php echo $currentPage == 'admin_orders.php' ? 'active' : ''; ?>"><i class="fas fa-receipt"></i> Pesanan</a>
                 <?php endif; ?>
-                
                 <?php if ($role == 'Super Admin'): ?>
-                    <a href="admin_settings.php" 
-                       class="<?php echo $currentPage == 'admin_settings.php' ? 'active' : ''; ?>">
-                       <i class="fas fa-cog"></i> Pengaturan
-                    </a>
+                    <a href="admin_settings.php" class="<?php echo $currentPage == 'admin_settings.php' ? 'active' : ''; ?>"><i class="fas fa-cog"></i> Pengaturan</a>
                 <?php endif; ?>
             </nav>
 
             <div class="sidebar-footer">
-                <a href="actions/handle_logout.php" class="logout-link">
-                    <i class="fas fa-sign-out-alt"></i> Logout
-                </a>
+                <a href="actions/handle_logout.php" class="logout-link"><i class="fas fa-sign-out-alt"></i> Logout</a>
             </div>
         </aside>
 
@@ -124,65 +125,83 @@ if (isset($_GET['success'])) {
                 <button class="hamburger" id="hamburger">
                     <i class="fas fa-bars"></i>
                 </button>
-                <h1>Pengaturan Akun</h1>
+                <h1>Pengaturan</h1>
             </header>
 
             <?php if ($message): ?>
                 <div class="admin-message <?php echo $message_type; ?>"><?php echo $message; ?></div>
             <?php endif; ?>
 
-            <div class="admin-toolbar">
-                <button class="btn btn-primary" id="add-account-btn">
-                    <i class="fas fa-plus"></i> Tambah Akun
-                </button>
+            <div class="settings-card">
+                <h4>Pengaturan Umum</h4>
+                <form action="actions/save_settings.php" method="POST">
+                    <div class="form-group">
+                        <label for="table_count">Jumlah Meja</label>
+                        <input type="number" id="table_count" name="table_count" value="<?php echo htmlspecialchars($table_count); ?>" min="1" required>
+                        <small style="color: var(--text-muted); margin-top: 8px; display: block;">
+                            Ini akan menentukan jumlah pilihan meja di halaman pelanggan.
+                        </small>
+                    </div>
+                    <button type="submit" class="btn btn-primary">Simpan Pengaturan</button>
+                </form>
             </div>
 
-            <div class="table-container">
-                <table>
-                    <thead>
-                        <tr>
-                            <th>Username</th>
-                            <th>Role</th>
-                            <th>Status</th>
-                            <th>Tindakan</th>
-                        </tr>
-                    </thead>
-                    <tbody id="account-list">
-                        <?php if ($users_result && $users_result->num_rows > 0): ?>
-                            <?php foreach ($users_result as $user): ?>
-                                <tr>
-                                    <td data-label="Username"><?php echo htmlspecialchars($user['username']); ?></td>
-                                    <td data-label="Role"><?php echo htmlspecialchars($user['role']); ?></td>
-                                    <td data-label="Status">
-                                        <?php if ($user['status'] == 1): ?>
-                                            <span class="status-badge status-active">Aktif</span>
-                                        <?php else: ?>
-                                            <span class="status-badge status-inactive">Nonaktif</span>
-                                        <?php endif; ?>
-                                    </td>
-                                    <td data-label="Tindakan">
-                                        <button class="btn btn-edit-sm btn-edit-account" 
-                                                data-id="<?php echo $user['user_id']; ?>"
-                                                data-username="<?php echo htmlspecialchars($user['username']); ?>"
-                                                data-role="<?php echo htmlspecialchars($user['role']); ?>"
-                                                data-status="<?php echo $user['status']; ?>">
-                                            <i class="fas fa-edit"></i> Edit
-                                        </button>
-                                        
-                                        <a href="actions/delete_account.php?id=<?php echo $user['user_id']; ?>" 
-                                           class="btn btn-delete-sm" 
-                                           onclick="return confirm('Apakah Anda yakin ingin menghapus akun <?php echo htmlspecialchars($user['username']); ?>?');"
-                                           <?php if ($user['user_id'] == $_SESSION['user_id']) echo 'style="display:none;"'; ?>>
-                                            <i class="fas fa-trash"></i> Hapus
-                                        </a>
-                                    </td>
-                                </tr>
-                            <?php endforeach; ?>
-                        <?php else: ?>
-                            <tr><td colspan="4" style="text-align: center;">Tidak ada data akun.</td></tr>
-                        <?php endif; ?>
-                    </tbody>
-                </table>
+
+            <div class="settings-card">
+                <h4>Pengaturan Akun</h4>
+                <div class="admin-toolbar" style="padding: 0 30px 20px 30px; margin: 0;">
+                    <button class="btn btn-primary" id="add-account-btn">
+                        <i class="fas fa-plus"></i> Tambah Akun
+                    </button>
+                </div>
+
+                <div class="table-container" style="border-top: 1px solid var(--tertiary-color); border-radius: 0 0 10px 10px;">
+                    <table>
+                        <thead>
+                            <tr>
+                                <th>Username</th>
+                                <th>Role</th>
+                                <th>Status</th>
+                                <th>Tindakan</th>
+                            </tr>
+                        </thead>
+                        <tbody id="account-list">
+                            <?php if ($users_result && $users_result->num_rows > 0): ?>
+                                <?php foreach ($users_result as $user): ?>
+                                    <tr>
+                                        <td data-label="Username"><?php echo htmlspecialchars($user['username']); ?></td>
+                                        <td data-label="Role"><?php echo htmlspecialchars($user['role']); ?></td>
+                                        <td data-label="Status">
+                                            <?php if ($user['status'] == 1): ?>
+                                                <span class="status-badge status-active">Aktif</span>
+                                            <?php else: ?>
+                                                <span class="status-badge status-inactive">Nonaktif</span>
+                                            <?php endif; ?>
+                                        </td>
+                                        <td data-label="Tindakan">
+                                            <button class="btn btn-edit-sm btn-edit-account" 
+                                                    data-id="<?php echo $user['user_id']; ?>"
+                                                    data-username="<?php echo htmlspecialchars($user['username']); ?>"
+                                                    data-role="<?php echo htmlspecialchars($user['role']); ?>"
+                                                    data-status="<?php echo $user['status']; ?>">
+                                                <i class="fas fa-edit"></i> Edit
+                                            </button>
+                                            
+                                            <a href="actions/delete_account.php?id=<?php echo $user['user_id']; ?>" 
+                                               class="btn btn-delete-sm" 
+                                               onclick="return confirm('Apakah Anda yakin ingin menghapus akun <?php echo htmlspecialchars($user['username']); ?>?');"
+                                               <?php if ($user['user_id'] == $_SESSION['user_id']) echo 'style="display:none;"'; ?>>
+                                                <i class="fas fa-trash"></i> Hapus
+                                            </a>
+                                        </td>
+                                    </tr>
+                                <?php endforeach; ?>
+                            <?php else: ?>
+                                <tr><td colspan="4" style="text-align: center;">Tidak ada data akun.</td></tr>
+                            <?php endif; ?>
+                        </tbody>
+                    </table>
+                </div>
             </div>
 
         </main>
@@ -199,7 +218,6 @@ if (isset($_GET['success'])) {
             
             <form id="account-form" action="actions/handle_account.php" method="POST">
                 <div class="modal-body">
-                    
                     <input type="hidden" id="user_id" name="user_id" value="">
                     
                     <div class="form-group">
@@ -235,7 +253,6 @@ if (isset($_GET['success'])) {
                             <span class="slider round"></span>
                         </label>
                     </div>
-                    
                 </div>
                 <div class="modal-footer">
                     <button type="button" class="btn btn-secondary" id="modal-cancel-btn">Batal</button>
@@ -247,15 +264,14 @@ if (isset($_GET['success'])) {
 
 
     <script>
+        // (JavaScript Modal Akun - Tidak Berubah)
         document.addEventListener('DOMContentLoaded', () => {
             const hamburger = document.getElementById('hamburger');
             const sidebar = document.getElementById('sidebar');
             const overlay = document.getElementById('sidebar-overlay');
-
             if (hamburger) hamburger.addEventListener('click', () => sidebar.classList.add('show'));
             if (overlay) overlay.addEventListener('click', () => sidebar.classList.remove('show'));
 
-            // --- (DIUBAH) Logika Modal Akun ---
             const modal = document.getElementById('account-modal');
             const addBtn = document.getElementById('add-account-btn');
             const closeBtn = document.getElementById('modal-close');
@@ -272,36 +288,30 @@ if (isset($_GET['success'])) {
             
             const closeModal = () => {
                 modal.classList.remove('show');
-                form.reset(); // Reset form
+                form.reset();
             };
 
-            // Buka modal untuk Tambah Akun
             addBtn.addEventListener('click', () => {
                 form.reset();
-                userIdInput.value = ''; // Pastikan ID kosong
+                userIdInput.value = '';
                 modalTitle.textContent = 'Tambah Akun Baru';
-                passwordInput.required = true; // Wajibkan password
+                passwordInput.required = true;
                 passwordHint.textContent = 'Wajib diisi untuk akun baru.';
-                statusToggle.style.display = 'none'; // Sembunyikan toggle status
+                statusToggle.style.display = 'none';
                 modal.classList.add('show');
             });
             
-            // (BARU) Buka modal untuk Edit Akun
             document.querySelectorAll('.btn-edit-account').forEach(button => {
                 button.addEventListener('click', (e) => {
                     const btn = e.currentTarget;
-                    // Isi form dengan data dari tombol
                     userIdInput.value = btn.dataset.id;
                     usernameInput.value = btn.dataset.username;
                     roleInput.value = btn.dataset.role;
                     statusCheckbox.checked = (btn.dataset.status == 1);
-                    
-                    // Ubah tampilan modal
                     modalTitle.textContent = 'Edit Akun: ' + btn.dataset.username;
-                    passwordInput.required = false; // Password tidak wajib
+                    passwordInput.required = false;
                     passwordHint.textContent = 'Kosongkan jika tidak ingin ganti password.';
-                    statusToggle.style.display = 'flex'; // Tampilkan toggle status
-                    
+                    statusToggle.style.display = 'flex';
                     modal.classList.add('show');
                 });
             });
@@ -314,7 +324,6 @@ if (isset($_GET['success'])) {
                 });
             }
 
-            // --- Logika Toggle Password (Tidak Berubah) ---
             const togglePassword = document.getElementById('toggle-password');
             if (togglePassword) {
                 togglePassword.addEventListener('click', function () {
