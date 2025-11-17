@@ -161,7 +161,7 @@ document.addEventListener('DOMContentLoaded', () => {
         });
     });
 
-    // === LOGIKA KONFIRMASI PESANAN ===
+    // === LOGIKA KONFIRMASI PESANAN (DIUBAH) ===
     const confirmOrderBtn = document.getElementById('confirm-order-btn');
 
     confirmOrderBtn.addEventListener('click', () => {
@@ -190,6 +190,10 @@ document.addEventListener('DOMContentLoaded', () => {
                 if (data.status === 'success') {
                     const tableNumForRedirect = sessionStorage.getItem('tableNumber') || '1';
                     
+                    // (DIUBAH) Logika ini sekarang MENAMBAHKAN ke array, bukan MENIMPA
+                    const orderStatusKey = `orderStatusData_MEJA_${tableNumForRedirect}`;
+                    
+                    // 1. Buat data untuk pesanan baru ini
                     const temporaryOrderData = {
                         order_id: data.order_id,
                         status: 'Menunggu Pembayaran',
@@ -199,15 +203,26 @@ document.addEventListener('DOMContentLoaded', () => {
                             quantity: parseInt(item.quantity),
                             price_per_item: parseFloat(item.price), 
                             subtotal: parseFloat(item.price) * parseInt(item.quantity), 
+                            notes: item.notes || '' // (Tambahkan catatan per item)
                         })),
                         total_price: grandTotal, 
-                        notes: currentCartData.map(item => 
+                        // (DIUBAH) Gabungkan catatan dari payload asli
+                        notes: payload.cartData.map(item => 
                             item.notes ? `${item.name}: ${item.notes}` : ''
                         ).filter(note => note).join('; ')
                     };
 
-                    const orderStatusKey = `orderStatusData_MEJA_${tableNumForRedirect}`;
-                    sessionStorage.setItem(orderStatusKey, JSON.stringify(temporaryOrderData));
+                    // 2. Ambil array pesanan yang sudah ada (jika ada)
+                    let existingOrders = JSON.parse(sessionStorage.getItem(orderStatusKey)) || [];
+                    if (!Array.isArray(existingOrders)) {
+                        existingOrders = []; // Pastikan itu array
+                    }
+
+                    // 3. Tambahkan pesanan baru ke array
+                    existingOrders.push(temporaryOrderData);
+                    
+                    // 4. Simpan kembali array yang sudah diperbarui
+                    sessionStorage.setItem(orderStatusKey, JSON.stringify(existingOrders));
                     
                     sessionStorage.removeItem('cartData');
                     sessionStorage.removeItem('cartTotalPrice');

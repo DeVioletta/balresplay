@@ -9,14 +9,14 @@ if (!isset($_GET['meja'])) {
 }
 $table_number = (int)$_GET['meja'];
 
-// 1. Ambil pesanan aktif terbaru untuk meja ini (status selain Selesai/Dibatalkan)
+// 1. (DIUBAH) Ambil SEMUA pesanan aktif untuk meja ini (LIMIT 1 dihapus)
+// (DIUBAH) Urutkan dari yang PALING LAMA (ASC) agar antrian benar
 $sql_order = "
     SELECT order_id, status, notes, order_time, total_price
     FROM orders 
     WHERE table_number = ? 
       AND status NOT IN ('Selesai', 'Dibatalkan')
-    ORDER BY order_time DESC 
-    LIMIT 1
+    ORDER BY order_time ASC
 ";
 $stmt = $db->prepare($sql_order);
 $stmt->bind_param("i", $table_number);
@@ -24,15 +24,17 @@ $stmt->execute();
 $result = $stmt->get_result();
 
 if ($result->num_rows == 0) {
-    echo json_encode(['status' => 'empty', 'message' => 'Tidak ada pesanan aktif untuk meja ini.']);
+    // (DIUBAH) Kembalikan array kosong agar konsisten
+    echo json_encode(['status' => 'empty', 'orders' => []]);
     exit;
 }
 
-$order = $result->fetch_assoc();
-$order_id = $order['order_id'];
+// (DIUBAH) Siapkan array untuk menampung semua pesanan
+$all_orders = [];
+$orders_data = $result->fetch_all(MYSQLI_ASSOC);
+$stmt->close();
 
-// 2. Ambil detail item pesanan
-// PERBAIKAN: Hapus kolom oi.notes karena tidak ada di tabel order_items. Catatan sudah ada di $order['notes'].
+// 2. (DIUBAH) Siapkan query item SATU KALI
 $sql_items = "
     SELECT 
         oi.quantity,
@@ -46,26 +48,33 @@ $sql_items = "
     WHERE oi.order_id = ?
 ";
 $stmt_items = $db->prepare($sql_items);
-$stmt_items->bind_param("i", $order_id);
-$stmt_items->execute();
-$items_result = $stmt_items->get_result();
-$items = $items_result->fetch_all(MYSQLI_ASSOC);
 
-// 3. Kirim respons
-$response = [
-    'status' => 'found',
-    'order' => [
+// 3. (DIUBAH) Loop untuk setiap pesanan dan ambil item-nya
+foreach ($orders_data as $order) {
+    $order_id = $order['order_id'];
+    
+    $stmt_items->bind_param("i", $order_id);
+    $stmt_items->execute();
+    $items_result = $stmt_items->get_result();
+    $items = $items_result->fetch_all(MYSQLI_ASSOC);
+
+    // Buat objek respons untuk pesanan ini
+    $response_order = [
         'order_id' => (int)$order_id,
         'status' => $order['status'],
         'orderTime' => strtotime($order['order_time']) * 1000,
         'notes' => $order['notes'], // Menggunakan catatan utama yang sudah digabung
         'total_price' => (float)$order['total_price'],
         'items' => $items
-    ]
-];
+    ];
+    
+    // Tambahkan ke array utama
+    $all_orders[] = $response_order;
+}
 
-echo json_encode($response);
-$stmt->close();
+// 4. Kirim respons (berisi array 'orders')
+echo json_encode(['status' => 'found', 'orders' => $all_orders]);
+
 $stmt_items->close();
 $db->close();
 ?>

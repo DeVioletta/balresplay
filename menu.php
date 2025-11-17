@@ -74,7 +74,18 @@ $table_numbers = range(1, $table_count);
         .status-header { text-align: center; margin-bottom: 20px; padding-bottom: 15px; border-bottom: 1px solid var(--tertiary-color); }
         .status-header p { margin: 0; color: var(--text-muted); }
         .status-header strong { display: block; margin-top: 5px; font-size: 1.2rem; color: var(--accent-color); }
-        .status-items { padding: 0 20px; }
+        .status-items { padding: 0 20px 20px 20px; } /* (DIUBAH) Tambah padding bawah */
+        
+        /* (BARU) Wrapper untuk setiap instance pesanan di modal status */
+        .status-order-instance {
+            margin-bottom: 15px;
+            border: 1px solid var(--tertiary-color);
+            border-radius: 8px;
+            overflow: hidden;
+        }
+        .status-order-instance:last-child {
+            margin-bottom: 0;
+        }
     </style>
 </head>
 <body>
@@ -411,7 +422,7 @@ document.addEventListener('DOMContentLoaded', () => {
         }
     });
 
-    // === (LOGIKA STATUS PESANAN - Tidak Berubah) ===
+    // === (LOGIKA STATUS PESANAN - DIUBAH) ===
     const openStatusModal = () => {
         updateOrderStatusView();
         orderStatusModal.classList.add('show');
@@ -423,39 +434,58 @@ document.addEventListener('DOMContentLoaded', () => {
         if (e.target === orderStatusModal) closeStatusModal();
     });
     
+    // (DIUBAH) Fungsi ini sekarang akan me-render SEMUA pesanan aktif
     window.updateOrderStatusView = function() {
         let orderStatusKey = `orderStatusData_MEJA_${currentTableNumber}`;
-        let currentOrderData = JSON.parse(sessionStorage.getItem(orderStatusKey));
-        if (!currentOrderData || !currentOrderData.items || currentOrderData.items.length === 0) {
+        // (DIUBAH) Ambil array pesanan
+        let currentOrdersArray = JSON.parse(sessionStorage.getItem(orderStatusKey));
+        
+        // (DIUBAH) Cek jika ini adalah array dan tidak kosong
+        if (!currentOrdersArray || !Array.isArray(currentOrdersArray) || currentOrdersArray.length === 0) {
             orderStatusDetailsContainer.innerHTML = `<div class="cart-empty-message"><p>Tidak ada pesanan aktif untuk meja ini.</p></div>`;
             return;
         }
-        let itemsHTML = currentOrderData.items.map(item => {
-            const variantHTML = (item.variant && item.variant.trim() !== "") ? ` (${htmlspecialchars(item.variant)})` : '';
-            const itemName = item.product_name || item.name; 
-            const itemPrice = (item.price_per_item ? (item.price_per_item * item.quantity) : (item.price * item.quantity)); 
-            return `
-            <div class="status-item">
-                <div class="status-item-info">
-                    <h4>${item.quantity}x ${htmlspecialchars(itemName)}${variantHTML}</h4>
-                    ${item.notes ? `<small>Catatan: ${htmlspecialchars(item.notes)}</small>` : ''}
+        
+        let combinedHTML = '';
+        
+        // (DIUBAH) Loop untuk setiap pesanan di dalam array
+        currentOrdersArray.forEach(currentOrderData => {
+            if (!currentOrderData || !currentOrderData.items) return; // Lewati jika ada data invalid
+
+            let itemsHTML = currentOrderData.items.map(item => {
+                const variantHTML = (item.variant && item.variant.trim() !== "") ? ` (${htmlspecialchars(item.variant)})` : '';
+                const itemName = item.product_name || item.name; 
+                const itemPrice = (item.price_per_item ? (item.price_per_item * item.quantity) : (item.price * item.quantity)); 
+                return `
+                <div class="status-item">
+                    <div class="status-item-info">
+                        <h4>${item.quantity}x ${htmlspecialchars(itemName)}${variantHTML}</h4>
+                        ${item.notes ? `<small>Catatan: ${htmlspecialchars(item.notes)}</small>` : ''}
+                    </div>
+                    <span class="status-item-price">Rp ${itemPrice.toLocaleString('id-ID')}</span>
                 </div>
-                <span class="status-item-price">Rp ${itemPrice.toLocaleString('id-ID')}</span>
-            </div>
-        `}).join('');
-        const mainNotesHTML = (currentOrderData.notes && currentOrderData.notes.trim() !== "")
-            ? `<div class="status-item"><small><strong>Catatan Utama:</strong> ${htmlspecialchars(currentOrderData.notes)}</small></div>`
-            : '';
-        orderStatusDetailsContainer.innerHTML = `
-            <div class="status-header">
-                <p>Status Saat Ini (Meja ${currentTableNumber}):</p>
-                <strong>${htmlspecialchars(currentOrderData.status)}</strong>
-            </div>
-            <div class="status-items">
-                ${itemsHTML}
-                ${mainNotesHTML}
-            </div>
-        `;
+            `}).join('');
+
+            const mainNotesHTML = (currentOrderData.notes && currentOrderData.notes.trim() !== "")
+                ? `<div class="status-item"><small><strong>Catatan Utama:</strong> ${htmlspecialchars(currentOrderData.notes)}</small></div>`
+                : '';
+            
+            // (DIUBAH) Bungkus setiap pesanan dalam wrapper-nya sendiri
+            combinedHTML += `
+                <div class="status-order-instance">
+                    <div class="status-header">
+                        <p style="font-size: 1rem;">Pesanan #${currentOrderData.order_id} (Meja ${currentTableNumber})</p>
+                        <strong>${htmlspecialchars(currentOrderData.status)}</strong>
+                    </div>
+                    <div class="status-items">
+                        ${itemsHTML}
+                        ${mainNotesHTML}
+                    </div>
+                </div>
+            `;
+        });
+        
+        orderStatusDetailsContainer.innerHTML = combinedHTML;
     };
 
     let pollingInterval;
@@ -468,9 +498,12 @@ document.addEventListener('DOMContentLoaded', () => {
                 .then(response => response.json())
                 .then(data => {
                     let orderStatusKey = `orderStatusData_MEJA_${currentTableNumber}`;
-                    if (data.status === 'found') { //
+                    
+                    // (DIUBAH) Cek 'data.orders' (array)
+                    if (data.status === 'found' && data.orders && data.orders.length > 0) { 
                         orderStatusIcon.style.display = 'flex';
-                        sessionStorage.setItem(orderStatusKey, JSON.stringify(data.order));
+                        // (DIUBAH) Simpan seluruh array
+                        sessionStorage.setItem(orderStatusKey, JSON.stringify(data.orders)); 
                         if (orderStatusModal.classList.contains('show')) {
                             updateOrderStatusView();
                         }
