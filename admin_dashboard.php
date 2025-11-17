@@ -1,3 +1,9 @@
+<?php
+require_once __DIR__ . '/config/database.php';
+startSecureSession();
+redirectIfNotLoggedIn('admin_login.php');
+?>
+
 <!DOCTYPE html>
 <html lang="id">
 <head>
@@ -9,6 +15,10 @@
     <link rel="stylesheet" href="css/admin_menu.css"> <!-- Base Admin -->
     <link rel="stylesheet" href="css/admin_settings.css"> <!-- Re-use tabel styles -->
     <link rel="stylesheet" href="css/admin_dashboard.css"> <!-- (FILE CSS BARU) -->
+    
+    <!-- (BARU) CSS untuk Kalender Litepicker -->
+    <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/litepicker/dist/css/litepicker.css"/>
+    
     <!-- Font & Ikon -->
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
     <link href="https://fonts.googleapis.com/css2?family=Cormorant+Garamond:wght@300;400;600;700&family=Montserrat:wght@300;400;500&display=swap" rel="stylesheet">
@@ -30,6 +40,11 @@
                 <a href="admin_orders.php"><i class="fas fa-receipt"></i> Pesanan</a>
                 <a href="admin_settings.php"><i class="fas fa-cog"></i> Pengaturan</a>
             </nav>
+            <div class="sidebar-footer">
+                <a href="actions/handle_logout.php" class="logout-link">
+                    <i class="fas fa-sign-out-alt"></i> Logout
+                </a>
+            </div>
         </aside>
 
         <!-- ===== MAIN CONTENT ===== -->
@@ -71,20 +86,27 @@
                 </div>
             </div>
 
-            <!-- Filter Rentang Tanggal -->
+            <!-- (PERUBAHAN) Filter Rentang Tanggal Dikembalikan ke 2 Input -->
             <form action="" method="GET" class="filter-toolbar">
                 <div class="form-group">
-                    <label for="start_date">Start Date</label>
-                    <input type="date" id="start_date" name="start_date" class="form-control">
+                    <label for="start_date_picker">Start Date</label>
+                    <input type="text" id="start_date_picker" name="start_date" class="form-control" readonly 
+                           style="cursor: pointer; background-color: var(--darker-bg);" 
+                           placeholder="Pilih tanggal mulai...">
                 </div>
                 <div class="form-group">
-                    <label for="end_date">End Date</label>
-                    <input type="date" id="end_date" name="end_date" class="form-control">
+                    <label for="end_date_picker">End Date</label>
+                    <input type="text" id="end_date_picker" name="end_date" class="form-control" readonly 
+                           style="cursor: pointer; background-color: var(--darker-bg);" 
+                           placeholder="Pilih tanggal akhir...">
                 </div>
+                
                 <button type="submit" class="btn btn-secondary">
                     <i class="fas fa-filter"></i> Filter
                 </button>
             </form>
+            <!-- (AKHIR PERUBAHAN) -->
+
 
             <!-- Tombol Unduh Excel -->
             <div class="admin-toolbar">
@@ -142,6 +164,9 @@
         <div class="sidebar-overlay" id="sidebar-overlay"></div>
     </div>
 
+    <!-- (BARU) Tambahkan JS untuk Litepicker -->
+    <script src="https://cdn.jsdelivr.net/npm/litepicker/dist/litepicker.js"></script>
+
     <script>
         document.addEventListener('DOMContentLoaded', () => {
             // --- Logika Sidebar Hamburger ---
@@ -159,6 +184,49 @@
                     sidebar.classList.remove('show');
                 });
             }
+
+            // --- (LOGIKA DIPERBARUI) untuk Litepicker (DUA INPUT) ---
+            const startDatePicker = new Litepicker({
+                element: document.getElementById('start_date_picker'),
+                singleMode: true, // Mode satu tanggal
+                format: 'YYYY-MM-DD', // Format yang dikirim ke PHP
+                placeholder: 'Pilih tanggal mulai...',
+                dropdowns: {
+                    minYear: 2020,
+                    maxYear: null,
+                    months: true,
+                    years: true
+                }
+            });
+
+            const endDatePicker = new Litepicker({
+                element: document.getElementById('end_date_picker'),
+                singleMode: true, // Mode satu tanggal
+                format: 'YYYY-MM-DD', // Format yang dikirim ke PHP
+                placeholder: 'Pilih tanggal akhir...',
+                dropdowns: {
+                    minYear: 2020,
+                    maxYear: null,
+                    months: true,
+                    years: true
+                }
+            });
+
+            // (LOGIKA DIPERBARUI) Ambil nilai dari URL jika ada untuk mengisi form
+            // Ini agar filter tetap tampil setelah halaman di-reload
+            const urlParams = new URLSearchParams(window.location.search);
+            const startDateParam = urlParams.get('start_date');
+            const endDateParam = urlParams.get('end_date');
+
+            if (startDateParam) {
+                // Set nilai di picker (format visual dan nilai input)
+                startDatePicker.setDate(new Date(startDateParam));
+            }
+            if (endDateParam) {
+                // Set nilai di picker (format visual dan nilai input)
+                endDatePicker.setDate(new Date(endDateParam));
+            }
+
 
             // --- Logika Tombol Unduh (Contoh) ---
             // Ini memerlukan library seperti SheetJS (xlsx) untuk implementasi nyata

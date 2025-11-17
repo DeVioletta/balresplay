@@ -207,7 +207,10 @@ td[data-label="Tindakan"] {
     color: var(--text-muted);
     font-size: 0.9rem;
 }
-.modal-body .input-with-icon .fa-lock { left: 15px; }
+.modal-body .input-with-icon .fa-user,
+.modal-body .input-with-icon .fa-lock { 
+    left: 15px; 
+}
 .modal-body .input-with-icon .fa-eye,
 .modal-body .input-with-icon .fa-eye-slash {
     right: 15px;
@@ -224,9 +227,8 @@ td[data-label="Tindakan"] {
     padding-right: 45px;
 }
 .modal-body input[type="text"].form-control {
-    padding-left: 15px;
+    padding-left: 45px;
 }
-#username.form-control { padding-left: 15px; } /* Override anomali */
 
 
 .modal-footer {

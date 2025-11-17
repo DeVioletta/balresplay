@@ -1,3 +1,10 @@
+<?php
+require_once __DIR__ . '/config/database.php';
+startSecureSession();
+redirectIfNotLoggedIn('admin_login.php');
+?>
+
+
 <!DOCTYPE html>
 <html lang="id">
 <head>
@@ -31,6 +38,11 @@
                 <a href="admin_orders.php" class="active"><i class="fas fa-receipt"></i> Pesanan</a>
                 <a href="admin_settings.php"><i class="fas fa-cog"></i> Pengaturan</a>
             </nav>
+            <div class="sidebar-footer">
+                <a href="actions/handle_logout.php" class="logout-link">
+                    <i class="fas fa-sign-out-alt"></i> Logout
+                </a>
+            </div>
         </aside>
 
         <!-- ===== MAIN CONTENT ===== -->
