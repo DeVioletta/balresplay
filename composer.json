@@ -1,0 +1,12 @@
+{
+    "name": "balresplay/app",
+    "description": "Sistem pemesanan dan manajemen cafe",
+    "license": "proprietary",
+    "authors": [
+        {
+            "name": "Amrestya Gaia"
+        }
+    ],
+    "minimum-stability": "stable",
+    "require": {}
+}
