@@ -47,6 +47,36 @@ if (isset($_GET['error'])) {
         
         /* (DIUBAH) Hapus style tombol nonaktif, karena tombol 'edit' selalu aktif */
         /* (DIUBAH) Hapus style .item-actions.has-delete */
+
+        /* (BARU) Styling untuk Search Bar */
+        .search-bar-container {
+            margin-bottom: 24px;
+        }
+        .search-input-wrapper {
+            position: relative;
+        }
+        .search-input-wrapper .fa-search {
+            position: absolute;
+            left: 15px;
+            top: 50%;
+            transform: translateY(-50%);
+            color: var(--text-muted);
+        }
+        #menu-search-input {
+            /* Menggunakan style input global dari admin_menu.css */
+            width: 100%;
+            padding: 12px 15px 12px 45px; /* Padding kiri untuk ikon */
+            background-color: var(--secondary-color);
+        }
+        
+        /* (BARU) Style untuk no-result */
+        .no-search-results {
+            color: var(--text-muted);
+            text-align: center;
+            padding: 20px;
+            grid-column: 1 / -1; /* Agar span di grid */
+            display: none; /* Sembunyi by default */
+        }
     </style>
 </head>
 <body>
@@ -112,6 +142,14 @@ if (isset($_GET['error'])) {
                 <h1>Manajemen Menu</h1>
             </header>
 
+            <!-- (BARU) Search Bar -->
+            <div class="search-bar-container">
+                <div class="search-input-wrapper">
+                    <i class="fas fa-search"></i>
+                    <input type="text" id="menu-search-input" placeholder="Cari nama menu..." class="form-control">
+                </div>
+            </div>
+
             <?php echo $message; ?>
 
             <div class="menu-toolbar">
@@ -158,7 +196,8 @@ if (isset($_GET['error'])) {
                         ?>
                         <div class="menu-item" 
                              data-product-id="<?php echo $product['product_id']; ?>" 
-                             data-category="<?php echo htmlspecialchars($product['category']); ?>">
+                             data-category="<?php echo htmlspecialchars($product['category']); ?>"
+                             data-name="<?php echo htmlspecialchars($product['name']); ?>">
                             
                             <div class="item-image">
                                 <?php if ($all_variants_unavailable): ?>
@@ -200,22 +239,60 @@ if (isset($_GET['error'])) {
             if (hamburger) hamburger.addEventListener('click', () => sidebar.classList.add('show'));
             if (overlay) overlay.addEventListener('click', () => sidebar.classList.remove('show'));
 
-            // Filter Kategori (Tidak Berubah)
+            // --- (BARU) Logika Filter dan Search ---
             const categoryFilter = document.getElementById('category-filter');
-            if (categoryFilter) {
-                categoryFilter.addEventListener('change', (e) => {
-                    const selectedCategory = e.currentTarget.value;
-                    const allItems = document.querySelectorAll('.admin-menu-grid .menu-item');
-                    allItems.forEach(item => {
-                        const itemCategory = item.dataset.category;
-                        if (selectedCategory === 'all' || itemCategory === selectedCategory) {
-                            item.style.display = 'flex';
-                        } else {
-                            item.style.display = 'none';
-                        }
-                    });
+            const searchInput = document.getElementById('menu-search-input');
+            const menuGrid = document.querySelector('.admin-menu-grid');
+            const allItems = document.querySelectorAll('.admin-menu-grid .menu-item');
+
+            // (BARU) Buat elemen pesan "Tidak ditemukan"
+            let noResultsMessage = document.createElement('p');
+            noResultsMessage.classList.add('no-search-results');
+            noResultsMessage.textContent = 'Tidak ada menu yang cocok dengan pencarian Anda.';
+            menuGrid.appendChild(noResultsMessage);
+
+            // (BARU) Fungsi filter terpusat yang menggabungkan search dan kategori
+            function filterMenuItems() {
+                const selectedCategory = categoryFilter.value;
+                const searchTerm = searchInput.value.toLowerCase().trim();
+                let itemsFound = 0;
+
+                allItems.forEach(item => {
+                    const itemCategory = item.dataset.category;
+                    const itemName = item.dataset.name.toLowerCase();
+
+                    // Cek kedua kondisi
+                    const categoryMatch = (selectedCategory === 'all' || itemCategory === selectedCategory);
+                    const nameMatch = itemName.includes(searchTerm);
+
+                    if (categoryMatch && nameMatch) {
+                        item.style.display = 'flex';
+                        itemsFound++;
+                    } else {
+                        item.style.display = 'none';
+                    }
                 });
+
+                // (BARU) Tampilkan/sembunyikan pesan "tidak ditemukan"
+                if (itemsFound === 0) {
+                    noResultsMessage.style.display = 'block';
+                } else {
+                    noResultsMessage.style.display = 'none';
+                }
             }
+
+            // (DIUBAH) Ganti logika filter kategori lama dengan fungsi baru
+            if (categoryFilter) {
+                categoryFilter.addEventListener('change', filterMenuItems);
+            }
+
+            // (BARU) Tambahkan event listener untuk search input
+            if (searchInput) {
+                // 'input' event bereaksi langsung saat mengetik, paste, dll.
+                searchInput.addEventListener('input', filterMenuItems);
+            }
+            // --- Akhir Logika Filter dan Search ---
+
 
             // (PERBAIKAN POIN 1) Hapus JavaScript untuk .btn-delete
             
