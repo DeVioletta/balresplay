@@ -97,6 +97,17 @@ $orders = getKitchenOrders($db);
                 <h1>Antrian Dapur</h1>
             </header>
             
+            <div class="menu-toolbar" style="margin-bottom: 20px; justify-content: flex-start;">
+                <div class="filter-group">
+                    <label for="status-filter-kitchen">Filter Status:</label>
+                    <select id="status-filter-kitchen" name="status">
+                        <option value="all">Semua Status</option>
+                        <option value="Kirim ke Dapur">Kirim ke Dapur</option>
+                        <option value="Sedang Dimasak">Sedang Dimasak</option>
+                    </select>
+                </div>
+            </div>
+
             <div class="kitchen-grid" id="kitchen-grid">
                 <?php if (empty($orders)): ?>
                     <div class="no-orders-message">
@@ -156,14 +167,51 @@ $orders = getKitchenOrders($db);
 
 <script>
 document.addEventListener('DOMContentLoaded', () => {
-    // Logika Sidebar Hamburger
+    // Logika Sidebar Hamburger (Kode tidak berubah)
     const hamburger = document.getElementById('hamburger');
     const sidebar = document.getElementById('sidebar');
     const overlay = document.getElementById('sidebar-overlay');
     if (hamburger) hamburger.addEventListener('click', () => sidebar.classList.add('show'));
     if (overlay) overlay.addEventListener('click', () => sidebar.classList.remove('show'));
     
-    // Logika KDS
+    // --- (BARU) Logika Filter Status Dapur ---
+    const statusFilterKitchen = document.getElementById('status-filter-kitchen');
+    const kitchenGrid = document.getElementById('kitchen-grid');
+
+    if (statusFilterKitchen && kitchenGrid) {
+        const allKitchenItems = kitchenGrid.querySelectorAll('.kitchen-order-card');
+
+        if (allKitchenItems.length > 0) {
+            let noKitchenResultsMessage = document.createElement('div');
+            noKitchenResultsMessage.className = 'no-orders-message'; // Pakai ulang style class yang ada
+            noKitchenResultsMessage.innerHTML = '<i class="fas fa-filter"></i>Tidak ada pesanan yang cocok dengan filter.';
+            noKitchenResultsMessage.style.display = 'none';
+            kitchenGrid.appendChild(noKitchenResultsMessage);
+
+            function filterKitchenOrders() {
+                const selectedStatus = statusFilterKitchen.value;
+                let itemsFound = 0;
+
+                allKitchenItems.forEach(item => {
+                    const itemStatus = item.dataset.status;
+                    if (selectedStatus === 'all' || itemStatus === selectedStatus) {
+                        item.style.display = 'block'; // Kartu adalah block
+                        itemsFound++;
+                    } else {
+                        item.style.display = 'none';
+                    }
+                });
+
+                noKitchenResultsMessage.style.display = (itemsFound === 0) ? 'block' : 'none';
+            }
+
+            statusFilterKitchen.addEventListener('change', filterKitchenOrders);
+        }
+    }
+    // --- Akhir Logika Filter Status Dapur ---
+
+
+    // Logika KDS (Kode tidak berubah)
     const grid = document.getElementById('kitchen-grid');
     if (grid) {
         grid.addEventListener('click', (e) => {
@@ -196,13 +244,17 @@ document.addEventListener('DOMContentLoaded', () => {
                                 `;
                             } else if (nextStatus === 'Siap Diantar') {
                                 card.remove();
-                                if (grid.children.length === 0) {
-                                    grid.innerHTML = `
-                                        <div class="no-orders-message">
-                                            <i class="fas fa-clipboard-check"></i>
-                                            Semua pesanan sudah selesai.
-                                        </div>
-                                    `;
+                                if (grid.children.length === 1) { // 1 karena "no results" message
+                                    const noOrdersMsg = grid.querySelector('.no-orders-message');
+                                    if(noOrdersMsg && noOrdersMsg.style.display === 'none') {
+                                         // Jika tidak ada hasil filter, jangan tampilkan "Semua pesanan selesai"
+                                    } else {
+                                        // Cek jika *semua* item sudah hilang
+                                        const remainingCards = grid.querySelectorAll('.kitchen-order-card[style*="display: block"]').length + grid.querySelectorAll('.kitchen-order-card:not([style])').length;
+                                        if (remainingCards === 0) {
+                                             grid.querySelector('.no-orders-message').innerHTML = '<i class="fas fa-clipboard-check"></i>Semua pesanan sudah selesai.';
+                                        }
+                                    }
                                 }
                             }
                         }

@@ -62,6 +62,9 @@ $history_orders = getOrdersForAdmin($db, true);
 
 // (PERBAIKAN POIN 2) Status hanya untuk Kasir/SA
 $role_statuses = ['Menunggu Pembayaran', 'Kirim ke Dapur', 'Siap Diantar', 'Selesai', 'Dibatalkan'];
+
+// (BARU) Status untuk filter dropdown
+$active_filter_statuses = ['Menunggu Pembayaran', 'Kirim ke Dapur', 'Sedang Dimasak', 'Siap Diantar'];
 ?>
 
 <!DOCTYPE html>
@@ -79,6 +82,33 @@ $role_statuses = ['Menunggu Pembayaran', 'Kirim ke Dapur', 'Siap Diantar', 'Sele
     <link href="https://fonts.googleapis.com/css2?family=Cormorant+Garamond:wght@300;400;600;700&family=Montserrat:wght@300;400;500&display=swap" rel="stylesheet">
     <style>
         .status-select:disabled { opacity: 0.5; cursor: not-allowed; background-color: var(--tertiary-color); }
+        /* (BARU) Style untuk filter group di toolbar */
+        .order-toolbar {
+            display: flex;
+            flex-wrap: wrap;
+            justify-content: space-between;
+            align-items: center;
+            gap: 15px;
+            margin-bottom: 24px;
+        }
+        .order-toolbar .filter-group {
+            display: flex;
+            align-items: center;
+            gap: 10px;
+        }
+        .order-toolbar .filter-group label {
+            font-size: 0.9rem;
+            color: var(--text-muted);
+            white-space: nowrap;
+        }
+         .order-toolbar .filter-group select {
+            background-color: var(--secondary-color);
+            color: var(--light-text);
+            border: 1px solid var(--tertiary-color);
+            padding: 8px 12px;
+            border-radius: 5px;
+            font-family: "Montserrat", sans-serif;
+        }
     </style>
 </head>
 <body>
@@ -145,6 +175,18 @@ $role_statuses = ['Menunggu Pembayaran', 'Kirim ke Dapur', 'Siap Diantar', 'Sele
             </header>
 
             <div class="order-toolbar">
+                <div class="filter-group">
+                    <label for="status-filter-admin">Filter Status:</label>
+                    <select id="status-filter-admin" name="status">
+                        <option value="all">Semua Status Aktif</option>
+                        <?php foreach ($active_filter_statuses as $status): ?>
+                            <option value="<?php echo htmlspecialchars($status); ?>">
+                                <?php echo htmlspecialchars($status); ?>
+                            </option>
+                        <?php endforeach; ?>
+                    </select>
+                </div>
+                
                 <button id="toggle-view-btn" class="btn btn-secondary">
                     <i class="fas fa-history"></i> Lihat Riwayat
                 </button>
@@ -290,14 +332,14 @@ $role_statuses = ['Menunggu Pembayaran', 'Kirim ke Dapur', 'Siap Diantar', 'Sele
 
     <script>
         document.addEventListener('DOMContentLoaded', () => {
-            // Sidebar
+            // Sidebar (Kode tidak berubah)
             const hamburger = document.getElementById('hamburger');
             const sidebar = document.getElementById('sidebar');
             const overlay = document.getElementById('sidebar-overlay');
             if (hamburger) hamburger.addEventListener('click', () => sidebar.classList.add('show'));
             if (overlay) overlay.addEventListener('click', () => sidebar.classList.remove('show'));
 
-            // Toggle Riwayat
+            // Toggle Riwayat (Kode tidak berubah)
             const toggleBtn = document.getElementById('toggle-view-btn');
             const activeGrid = document.getElementById('active-orders-grid');
             const historyGrid = document.getElementById('history-orders-grid');
@@ -317,7 +359,44 @@ $role_statuses = ['Menunggu Pembayaran', 'Kirim ke Dapur', 'Siap Diantar', 'Sele
                 });
             }
 
-            // LOGIKA UPDATE STATUS DENGAN KONFIRMASI
+            // --- (BARU) Logika Filter Status Admin ---
+            const statusFilterAdmin = document.getElementById('status-filter-admin');
+            
+            if (statusFilterAdmin && activeGrid) {
+                const allAdminItems = activeGrid.querySelectorAll('.order-card');
+                
+                if (allAdminItems.length > 0) {
+                    let noAdminResultsMessage = document.createElement('h3');
+                    noAdminResultsMessage.textContent = 'Tidak ada pesanan yang cocok dengan filter status.';
+                    noAdminResultsMessage.style.color = 'var(--text-muted)';
+                    noAdminResultsMessage.style.gridColumn = '1 / -1';
+                    noAdminResultsMessage.style.display = 'none';
+                    activeGrid.appendChild(noAdminResultsMessage);
+
+                    function filterAdminOrders() {
+                        const selectedStatus = statusFilterAdmin.value;
+                        let itemsFound = 0;
+
+                        allAdminItems.forEach(item => {
+                            const itemStatus = item.dataset.status;
+                            if (selectedStatus === 'all' || itemStatus === selectedStatus) {
+                                item.style.display = 'block'; // Kartu adalah block
+                                itemsFound++;
+                            } else {
+                                item.style.display = 'none';
+                            }
+                        });
+
+                        noAdminResultsMessage.style.display = (itemsFound === 0) ? 'block' : 'none';
+                    }
+
+                    statusFilterAdmin.addEventListener('change', filterAdminOrders);
+                }
+            }
+            // --- Akhir Logika Filter Status Admin ---
+
+
+            // LOGIKA UPDATE STATUS DENGAN KONFIRMASI (Kode tidak berubah)
             const activeOrdersGrid = document.getElementById('active-orders-grid');
             if (activeOrdersGrid) {
                 activeOrdersGrid.addEventListener('change', (e) => {
