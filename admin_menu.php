@@ -3,26 +3,24 @@ require_once __DIR__ . '/config/database.php';
 startSecureSession();
 redirectIfNotLoggedIn('admin_login.php');
 
-// (PERBAIKAN POIN 2) Role check: Boleh diakses Kasir, Dapur, Super Admin
 $role = $_SESSION['role'];
 if ($role !== 'Kasir' && $role !== 'Super Admin' && $role !== 'Dapur') {
     $_SESSION['error_message'] = 'Anda tidak memiliki izin untuk melihat halaman Menu.';
-    header("Location: admin_login.php"); // Tendang ke login
+    header("Location: admin_login.php");
     exit();
 }
 
-$products = getAllProductsWithVariants($db);
-$categories = getAllCategories($db);
+$products = getAllProductsWithVariants($db); //
+$categories = getAllCategories($db); //
 
 $message = '';
-// ... (logika $message tidak berubah)
 if (isset($_GET['success'])) {
-    if ($_GET['success'] == 'deleted') $message = '<div class="admin-message success">Menu berhasil dihapus.</div>';
+    // (DIUBAH) Hapus pesan 'deleted'
     if ($_GET['success'] == 'updated') $message = '<div class="admin-message success">Menu berhasil diperbarui.</div>';
     if ($_GET['success'] == 'created') $message = '<div class="admin-message success">Menu baru berhasil dibuat.</div>';
 }
 if (isset($_GET['error'])) {
-    if ($_GET['error'] == 'deletefailed') $message = '<div class="admin-message error">Gagal menghapus menu.</div>';
+    // (DIUBAH) Hapus pesan 'deletefailed'
     if ($_GET['error'] == 'notfound') $message = '<div class="admin-message error">Produk tidak ditemukan.</div>';
 }
 ?>
@@ -41,14 +39,9 @@ if (isset($_GET['error'])) {
         .admin-message { padding: 15px; border-radius: 5px; margin-bottom: 20px; font-weight: 500; }
         .admin-message.success { background-color: var(--success-color); color: var(--light-text); }
         .admin-message.error { background-color: var(--danger-color); color: var(--light-text); }
-        /* (BARU) Style untuk tombol nonaktif */
-        .btn-edit:disabled, .btn-delete:disabled {
-            background-color: var(--tertiary-color);
-            cursor: not-allowed;
-            opacity: 0.6;
-        }
-        .btn-delete:disabled:hover { background-color: var(--tertiary-color); }
-        .btn-edit:disabled:hover { background-color: var(--tertiary-color); }
+        
+        /* (DIUBAH) Hapus style tombol nonaktif, karena tombol 'edit' selalu aktif */
+        /* (DIUBAH) Hapus style .item-actions.has-delete */
     </style>
 </head>
 <body>
@@ -135,7 +128,8 @@ if (isset($_GET['error'])) {
                 <?php endif; ?>
             </div>
 
-            <div class="admin-menu-grid"> 
+            <div class="admin-menu-grid">
+                
                 <?php if (empty($products)): ?>
                     <p>Belum ada menu yang ditambahkan.</p>
                 <?php else: ?>
@@ -179,16 +173,8 @@ if (isset($_GET['error'])) {
                             <div class="item-actions">
                                 <a href="admin_form_menu.php?id=<?php echo $product['product_id']; ?>" class="btn btn-edit">
                                     <i class="fas fa-edit"></i> 
-                                    <?php echo ($role == 'Dapur' ? 'Edit Stok' : 'Edit'); // Ganti teks tombol untuk Dapur ?>
+                                    <?php echo ($role == 'Dapur' ? 'Edit Stok' : 'Edit'); ?>
                                 </a>
-                                
-                                <?php if ($role == 'Super Admin' || $role == 'Kasir'): ?>
-                                <button class="btn btn-delete" 
-                                        data-id="<?php echo $product['product_id']; ?>"
-                                        data-name="<?php echo htmlspecialchars($product['name']); ?>">
-                                    <i class="fas fa-trash"></i> Hapus
-                                </button>
-                                <?php endif; ?>
                             </div>
 
                         </div>
@@ -226,30 +212,7 @@ if (isset($_GET['error'])) {
                 });
             }
 
-            // Hapus Menu (Tidak Berubah)
-            document.querySelectorAll('.btn-delete').forEach(button => {
-                button.addEventListener('click', (e) => {
-                    const id = e.currentTarget.dataset.id;
-                    const name = e.currentTarget.dataset.name;
-                    const isConfirmed = confirm(`Apakah Anda yakin ingin menghapus menu "${name}"?`);
-                    
-                    if (isConfirmed) {
-                        fetch(`actions/delete_menu.php?id=${id}`, { method: 'GET' })
-                        .then(response => response.json())
-                        .then(data => {
-                            if (data.status === 'success') {
-                                window.location.href = 'admin_menu.php?success=deleted';
-                            } else {
-                                window.location.href = 'admin_menu.php?error=' + (data.message || 'deletefailed');
-                            }
-                        })
-                        .catch(error => {
-                            console.error('Error:', error);
-                            alert('Terjadi kesalahan saat mencoba menghapus.');
-                        });
-                    }
-                });
-            });
+            // (PERBAIKAN POIN 1) Hapus JavaScript untuk .btn-delete
         });
     </script>
 </body>

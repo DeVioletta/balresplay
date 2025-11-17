@@ -213,7 +213,8 @@ $order_details = getDashboardOrderDetails($db, $start_date, $end_date);
         <div class="sidebar-overlay" id="sidebar-overlay"></div>
     </div>
 
-    <script src="https://cdn.jsdelivr.net/npm/litepicker/dist/litepicker.js"></script>
+<script src="https://cdn.jsdelivr.net/npm/litepicker/dist/litepicker.js"></script>
+
     <script>
         document.addEventListener('DOMContentLoaded', () => {
             // --- Logika Sidebar Hamburger (Tidak Berubah) ---
@@ -224,7 +225,7 @@ $order_details = getDashboardOrderDetails($db, $start_date, $end_date);
             if (hamburger) hamburger.addEventListener('click', () => sidebar.classList.add('show'));
             if (overlay) overlay.addEventListener('click', () => sidebar.classList.remove('show'));
 
-            // --- (LOGIKA DIPERBARUI) untuk Litepicker (DUA INPUT) ---
+            // --- Logika Litepicker (Tidak Berubah) ---
             const startDateEl = document.getElementById('start_date_picker');
             const endDateEl = document.getElementById('end_date_picker');
 
@@ -244,8 +245,6 @@ $order_details = getDashboardOrderDetails($db, $start_date, $end_date);
                 dropdowns: { minYear: 2020, maxYear: null, months: true, years: true }
             });
 
-            // (LOGIKA DIPERBARUI) Ambil nilai dari input (yang sudah diisi PHP)
-            // untuk mengisi kalender
             if (startDateEl.value) {
                 startDatePicker.setDate(new Date(startDateEl.value));
             }
@@ -253,11 +252,32 @@ $order_details = getDashboardOrderDetails($db, $start_date, $end_date);
                 endDatePicker.setDate(new Date(endDateEl.value));
             }
 
-            // --- Logika Tombol Unduh (Contoh) ---
+
+            // --- (PERBAIKAN POIN 3) Logika Tombol Unduh ---
             const downloadBtn = document.getElementById('download-excel-btn');
             if (downloadBtn) {
                 downloadBtn.addEventListener('click', () => {
-                    alert('Fungsi unduh Excel belum diimplementasikan.');
+                    // Ambil nilai tanggal dari input
+                    const startDate = startDateEl.value;
+                    const endDate = endDateEl.value;
+
+                    // Buat URL
+                    let url = 'actions/download_report.php';
+                    const params = [];
+                    
+                    if (startDate) {
+                        params.push(`start_date=${startDate}`);
+                    }
+                    if (endDate) {
+                        params.push(`end_date=${endDate}`);
+                    }
+
+                    if (params.length > 0) {
+                        url += '?' + params.join('&');
+                    }
+                    
+                    // Buka URL di tab baru untuk memicu download
+                    window.open(url, '_blank');
                 });
             }
         });
