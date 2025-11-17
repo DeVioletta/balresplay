@@ -15,13 +15,13 @@ $categories = getAllCategories($db); //
 
 $message = '';
 if (isset($_GET['success'])) {
-    // (DIUBAH) Hapus pesan 'deleted'
-    if ($_GET['success'] == 'updated') $message = '<div class="admin-message success">Menu berhasil diperbarui.</div>';
-    if ($_GET['success'] == 'created') $message = '<div class="admin-message success">Menu baru berhasil dibuat.</div>';
+    // (DIUBAH) Tambahkan id="auto-hide-message"
+    if ($_GET['success'] == 'updated') $message = '<div id="auto-hide-message" class="admin-message success">Menu berhasil diperbarui.</div>';
+    if ($_GET['success'] == 'created') $message = '<div id="auto-hide-message" class="admin-message success">Menu baru berhasil dibuat.</div>';
 }
 if (isset($_GET['error'])) {
-    // (DIUBAH) Hapus pesan 'deletefailed'
-    if ($_GET['error'] == 'notfound') $message = '<div class="admin-message error">Produk tidak ditemukan.</div>';
+    // (DIUBAH) Tambahkan id="auto-hide-message"
+    if ($_GET['error'] == 'notfound') $message = '<div id="auto-hide-message" class="admin-message error">Produk tidak ditemukan.</div>';
 }
 ?>
 
@@ -36,7 +36,12 @@ if (isset($_GET['error'])) {
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
     <link href="https://fonts.googleapis.com/css2?family=Cormorant+Garamond:wght@300;400;600;700&family=Montserrat:wght@300;400;500&display=swap" rel="stylesheet">
     <style>
-        .admin-message { padding: 15px; border-radius: 5px; margin-bottom: 20px; font-weight: 500; }
+        .admin-message { 
+            padding: 15px; border-radius: 5px; margin-bottom: 20px; font-weight: 500; 
+            /* (BARU) Tambahkan transisi untuk fade-out */
+            opacity: 1;
+            transition: opacity 0.5s ease-out;
+        }
         .admin-message.success { background-color: var(--success-color); color: var(--light-text); }
         .admin-message.error { background-color: var(--danger-color); color: var(--light-text); }
         
@@ -213,6 +218,17 @@ if (isset($_GET['error'])) {
             }
 
             // (PERBAIKAN POIN 1) Hapus JavaScript untuk .btn-delete
+            
+            // (BARU) Logika untuk auto-hide message
+            const messageElement = document.getElementById('auto-hide-message');
+            if (messageElement) {
+                setTimeout(() => {
+                    messageElement.style.opacity = '0'; // Memicu transisi CSS
+                    setTimeout(() => {
+                        messageElement.remove(); // Hapus setelah fade-out
+                    }, 500); // 0.5 detik (sesuai transisi CSS)
+                }, 4000); // Tampilkan pesan selama 4 detik
+            }
         });
     </script>
 </body>

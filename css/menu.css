@@ -842,9 +842,6 @@ h5 {
     background-color: var(--secondary-color);
 }
 
-.status-items-list {
-    /* Padding sudah dihandle oleh .cart-items */
-}
 
 .status-item {
     display: flex;
