@@ -269,7 +269,7 @@ input:focus, select:focus, textarea:focus {
 .item-image img {
     width: 100%;
     height: 100%;
-    object-fit: cover;
+    object-fit:contain;
     transition: var(--transition);
 }
 .menu-item:hover .item-image img {
