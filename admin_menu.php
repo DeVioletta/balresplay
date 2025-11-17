@@ -38,15 +38,12 @@ if (isset($_GET['error'])) {
     <style>
         .admin-message { 
             padding: 15px; border-radius: 5px; margin-bottom: 20px; font-weight: 500; 
-            /* (BARU) Tambahkan transisi untuk fade-out */
             opacity: 1;
             transition: opacity 0.5s ease-out;
         }
         .admin-message.success { background-color: var(--success-color); color: var(--light-text); }
         .admin-message.error { background-color: var(--danger-color); color: var(--light-text); }
         
-        /* (DIUBAH) Hapus style tombol nonaktif, karena tombol 'edit' selalu aktif */
-        /* (DIUBAH) Hapus style .item-actions.has-delete */
 
         /* (BARU) Styling untuk Search Bar */
         .search-bar-container {
