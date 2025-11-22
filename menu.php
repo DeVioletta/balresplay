@@ -1,5 +1,5 @@
 <?php
-// 1. Sertakan file konfigurasi & mulai sesi
+// 1. Sertakan file konfigurasi & mulai  hai
 require_once __DIR__ . '/config/database.php';
 startSecureSession();
 
