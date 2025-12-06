@@ -168,10 +168,14 @@ function deleteAdminUser($db, $user_id) {
  * @return array Daftar produk, masing-masing dengan array 'variants'
  */
 function getAllProductsWithVariants($db) {
+    // [MODIFIKASI] Tambahkan filter WHERE p.is_deleted = 0
+    // [MODIFIKASI] Filter join varian AND pv.is_deleted = 0
     $sql = "SELECT p.*, pv.variant_id, pv.variant_name, pv.price, pv.is_available 
             FROM products p 
-            LEFT JOIN product_variants pv ON p.product_id = pv.product_id 
+            LEFT JOIN product_variants pv ON p.product_id = pv.product_id AND pv.is_deleted = 0
+            WHERE p.is_deleted = 0
             ORDER BY p.product_id, pv.variant_id";
+            
     $result = $db->query($sql);
     if (!$result) return [];
     
@@ -188,12 +192,12 @@ function getAllProductsWithVariants($db) {
                 'variants' => []
             ];
         }
-        if ($row['variant_id']) { // Hanya tambahkan varian jika ada (karena LEFT JOIN)
+        if ($row['variant_id']) { 
             $products[$product_id]['variants'][] = [
                 'variant_id' => $row['variant_id'],
                 'name' => $row['variant_name'],
                 'price' => $row['price'],
-                'is_available' => $row['is_available'] // Ditambahkan
+                'is_available' => $row['is_available']
             ];
         }
     }
@@ -208,7 +212,8 @@ function getAllProductsWithVariants($db) {
  * @return array|null Data produk tunggal atau null
  */
 function getProductById($db, $product_id) {
-    $stmt = $db->prepare("SELECT * FROM products WHERE product_id = ?");
+    // [MODIFIKASI] Tambahkan AND is_deleted = 0
+    $stmt = $db->prepare("SELECT * FROM products WHERE product_id = ? AND is_deleted = 0");
     $stmt->bind_param("i", $product_id);
     $stmt->execute();
     $result = $stmt->get_result();
@@ -218,7 +223,8 @@ function getProductById($db, $product_id) {
     $product = $result->fetch_assoc();
     $product['variants'] = [];
     
-    $stmt_var = $db->prepare("SELECT * FROM product_variants WHERE product_id = ? ORDER BY variant_id");
+    // [MODIFIKASI] Tambahkan AND is_deleted = 0 pada varian juga
+    $stmt_var = $db->prepare("SELECT * FROM product_variants WHERE product_id = ? AND is_deleted = 0 ORDER BY variant_id");
     $stmt_var->bind_param("i", $product_id);
     $stmt_var->execute();
     $variants_result = $stmt_var->get_result();
@@ -324,9 +330,19 @@ function updateProductVariant($db, $variant_id, $variant_name, $price, $is_avail
  * @return bool True jika berhasil
  */
 function deleteProduct($db, $product_id) {
-    $stmt = $db->prepare("DELETE FROM products WHERE product_id = ?");
+    // 1. Soft Delete Produk Utama
+    $stmt = $db->prepare("UPDATE products SET is_deleted = 1 WHERE product_id = ?");
     $stmt->bind_param("i", $product_id);
-    return $stmt->execute();
+    $success = $stmt->execute();
+    
+    if ($success) {
+        // 2. Soft Delete Semua Varian terkait (Opsional tapi disarankan agar bersih)
+        $stmt_var = $db->prepare("UPDATE product_variants SET is_deleted = 1 WHERE product_id = ?");
+        $stmt_var->bind_param("i", $product_id);
+        $stmt_var->execute();
+    }
+    
+    return $success;
 }
 
 /**
@@ -356,11 +372,11 @@ function getVariantIdsForProduct($db, $product_id) {
  * @return bool True jika berhasil
  */
 function deleteVariant($db, $variant_id) {
-    $stmt = $db->prepare("DELETE FROM product_variants WHERE variant_id = ?");
+    // [MODIFIKASI] Ganti DELETE dengan UPDATE
+    $stmt = $db->prepare("UPDATE product_variants SET is_deleted = 1 WHERE variant_id = ?");
     $stmt->bind_param("i", $variant_id);
     return $stmt->execute();
 }
-
 
 
 

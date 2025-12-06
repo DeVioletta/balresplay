@@ -1,29 +1,37 @@
 <?php
-// 1. Muat konfigurasi dan mulai sesi
+// FILE: balresplay/actions/delete_menu.php
+
 require_once __DIR__ . '/../config/database.php';
 startSecureSession();
 redirectIfNotLoggedIn('../admin_login.php');
 
-// (BARU) Set header ke JSON karena kita menggunakan fetch()
-header('Content-Type: application/json');
-
-// 2. Cek jika ID ada
-if (isset($_GET['id'])) {
-    $product_id = (int)$_GET['id'];
-
-    // 3. Panggil fungsi delete
-    // Database Anda memiliki ON DELETE CASCADE, 
-    // jadi menghapus produk akan otomatis menghapus variannya.
-    if (deleteProduct($db, $product_id)) {
-        // 4. Kirim respons sukses
-        echo json_encode(['status' => 'success', 'message' => 'Produk berhasil dihapus.']);
-    } else {
-        // 5. Kirim respons gagal
-        echo json_encode(['status' => 'error', 'message' => 'Gagal menghapus produk dari database.']);
-    }
-} else {
-    // 6. Kirim respons jika tidak ada ID
-    echo json_encode(['status' => 'error', 'message' => 'ID produk tidak disediakan.']);
+// Cek Role
+if ($_SESSION['role'] == 'Dapur') {
+    header("Location: ../admin_menu.php");
+    exit();
 }
+
+$id = $_GET['id'] ?? null;
+$type = $_GET['type'] ?? null; // 'product' atau 'variant'
+
+if ($id && $type) {
+    if ($type === 'product') {
+        // Panggil fungsi Soft Delete Produk di database.php
+        if (deleteProduct($db, $id)) {
+            // Sukses
+        } else {
+            $_SESSION['error_message'] = "Gagal menghapus produk.";
+        }
+    } elseif ($type === 'variant') {
+        // Panggil fungsi Soft Delete Varian di database.php
+        if (deleteVariant($db, $id)) {
+            // Sukses
+        } else {
+            $_SESSION['error_message'] = "Gagal menghapus varian.";
+        }
+    }
+}
+
+header("Location: ../admin_menu.php");
 exit();
 ?>
