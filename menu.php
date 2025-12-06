@@ -559,46 +559,75 @@ document.addEventListener('DOMContentLoaded', () => {
     updateCart();
     checkOrderStatus(); 
 
-    // === [LOGIKA BARU] RESUME PAYMENT (TANPA TOMBOL ABAIKAN) ===
+    // === [LOGIKA BARU] RESUME PAYMENT DENGAN VALIDASI ===
     const pendingToken = sessionStorage.getItem('pending_snap_token');
     const pendingOrderId = sessionStorage.getItem('pending_order_id');
     const resumeBar = document.getElementById('resume-payment-bar');
     const resumeOrderIdSpan = document.getElementById('resume-order-id');
     const btnResume = document.getElementById('btn-resume-payment');
 
-    // Cek apakah ada pembayaran tertunda di sesi browser
+    // Cek apakah ada data di storage
     if (pendingToken && pendingOrderId) {
-        resumeOrderIdSpan.textContent = pendingOrderId;
-        resumeBar.style.display = 'block'; // Munculkan bar
+        
+        // [PERBAIKAN] Validasi ke server dulu sebelum memunculkan tombol
+        fetch(`actions/validate_pending_order.php?order_id=${pendingOrderId}`)
+            .then(response => response.json())
+            .then(data => {
+                if (data.valid) {
+                    // JIKA VALID (Masih ada di DB & Menunggu Pembayaran): Tampilkan Bar
+                    resumeOrderIdSpan.textContent = pendingOrderId;
+                    resumeBar.style.display = 'block'; 
+                } else {
+                    // JIKA TIDAK VALID (Sudah Lunas / Expired / Dihapus): Bersihkan Storage
+                    console.log("Pending order invalid/expired. Clearing session.");
+                    sessionStorage.removeItem('pending_snap_token');
+                    sessionStorage.removeItem('pending_order_id');
+                    resumeBar.style.display = 'none';
+                }
+            })
+            .catch(err => {
+                console.error("Gagal memvalidasi order pending:", err);
+                // Opsional: Sembunyikan jika error koneksi agar tidak membingungkan
+                resumeBar.style.display = 'none';
+            });
     }
 
     // Aksi Tombol Bayar Sekarang
     if (btnResume) {
         btnResume.addEventListener('click', () => {
-            if (typeof window.snap !== 'undefined' && pendingToken) {
-                window.snap.pay(pendingToken, {
+            // Cek ulang token saat tombol diklik (double check)
+            const currentToken = sessionStorage.getItem('pending_snap_token');
+            
+            if (typeof window.snap !== 'undefined' && currentToken) {
+                window.snap.pay(currentToken, {
                     onSuccess: function(result){
                         alert("Pembayaran Berhasil! Terima kasih.");
-                        // Hapus token pending
                         sessionStorage.removeItem('pending_snap_token');
                         sessionStorage.removeItem('pending_order_id');
                         resumeBar.style.display = 'none';
-                        window.location.reload(); // Refresh halaman agar polling status jalan
+                        window.location.reload(); 
                     },
                     onPending: function(result){
                         alert("Menunggu pembayaran...");
                         window.location.reload();
                     },
                     onError: function(result){
-                        alert("Pembayaran gagal! Silakan coba lagi.");
+                        // Jika Midtrans bilang token expired saat diklik
+                        alert("Maaf, sesi pembayaran telah berakhir atau dibatalkan.");
+                        sessionStorage.removeItem('pending_snap_token');
+                        sessionStorage.removeItem('pending_order_id');
+                        resumeBar.style.display = 'none';
+                        window.location.reload();
                     },
                     onClose: function(){
                         alert('Anda menutup popup. Pembayaran tetap tertunda.');
-                        // Bar tetap muncul karena kita tidak menghapus token
                     }
                 });
             } else {
-                alert("Sistem pembayaran belum siap atau token kadaluarsa. Silakan refresh halaman.");
+                alert("Data pembayaran tidak valid. Halaman akan dimuat ulang.");
+                sessionStorage.removeItem('pending_snap_token');
+                sessionStorage.removeItem('pending_order_id');
+                window.location.reload();
             }
         });
     }
