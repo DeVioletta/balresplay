@@ -1,18 +1,18 @@
 <?php
-// 1. Sertakan file konfigurasi & mulai  hai
+// 1. Sertakan file konfigurasi & mulai sesi
 require_once __DIR__ . '/config/database.php';
 startSecureSession();
 
 // 2. Ambil semua data produk dari database
-$products_list = getAllProductsWithVariants($db); //
+$products_list = getAllProductsWithVariants($db); 
 
-// (PERBAIKAN POIN 1) Filter produk yang tersedia SEBELUM membuat kategori
+// Filter produk yang tersedia SEBELUM membuat kategori
 $available_categories = [];
 foreach ($products_list as $product) {
     $product_is_available = false;
     if (!empty($product['variants'])) {
         foreach ($product['variants'] as $variant) {
-            if ($variant['is_available'] == 1) { //
+            if ($variant['is_available'] == 1) { 
                 $product_is_available = true;
                 break;
             }
@@ -27,12 +27,12 @@ foreach ($products_list as $product) {
     }
 }
 
-// (PERBAIKAN POIN 2) Ambil jumlah meja dari database
+// Ambil jumlah meja dari database
 $table_count_result = $db->query("SELECT setting_value FROM settings WHERE setting_key = 'table_count' LIMIT 1");
 if ($table_count_result && $table_count_result->num_rows > 0) {
     $table_count = (int)$table_count_result->fetch_assoc()['setting_value'];
 } else {
-    $table_count = 20; // Default jika pengaturan tidak ada
+    $table_count = 20; 
 }
 $table_numbers = range(1, $table_count);
 ?>
@@ -44,10 +44,13 @@ $table_numbers = range(1, $table_count);
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>BalResplay | Menu</title>
     <link rel="stylesheet" href="css/variable.css">
-    <link rel="stylesheet" href="css/menu.css"> <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+    <link rel="stylesheet" href="css/menu.css"> 
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
     <link href="https://fonts.googleapis.com/css2?family=Cormorant+Garamond:wght@300;400;600;700&family=Montserrat:wght@300;400;500&display=swap" rel="stylesheet">
+    
+    <script src="https://app.sandbox.midtrans.com/snap/snap.js" data-client-key="SB-Mid-client-XXXXXXXXXXXXXXXX"></script>
+
     <style>
-        /* (DIUBAH) Hapus style .unavailable karena itemnya disembunyikan */
         .item-image .badge-habis {
             position: absolute; top: 10px; right: 10px; background-color: var(--danger-color);
             color: var(--light-text); padding: 5px 12px; border-radius: 20px;
@@ -61,7 +64,6 @@ $table_numbers = range(1, $table_count);
         }
         .cart-table-number select:focus { outline: 1px solid var(--accent-color); }
         
-        /* Style untuk status item di modal (tidak berubah) */
         .status-item {
             display: flex; justify-content: space-between; align-items: flex-start;
             padding: 15px 0; border-bottom: 1px dashed var(--tertiary-color);
@@ -74,9 +76,8 @@ $table_numbers = range(1, $table_count);
         .status-header { text-align: center; margin-bottom: 20px; padding-bottom: 15px; border-bottom: 1px solid var(--tertiary-color); }
         .status-header p { margin: 0; color: var(--text-muted); }
         .status-header strong { display: block; margin-top: 5px; font-size: 1.2rem; color: var(--accent-color); }
-        .status-items { padding: 0 20px 20px 20px; } /* (DIUBAH) Tambah padding bawah */
+        .status-items { padding: 0 20px 20px 20px; }
         
-        /* (BARU) Wrapper untuk setiap instance pesanan di modal status */
         .status-order-instance {
             margin-bottom: 15px;
             border: 1px solid var(--tertiary-color);
@@ -86,11 +87,47 @@ $table_numbers = range(1, $table_count);
         .status-order-instance:last-child {
             margin-bottom: 0;
         }
+
+        /* [BARU] Style untuk Resume Payment Bar */
+        #resume-payment-bar {
+            display: none; 
+            position: fixed; 
+            top:40px; 
+            left: 0; 
+            width: 100%; 
+            background-color: #fff3cd; 
+            border-top: 2px solid #ffecb5; 
+            padding: 15px; 
+            box-shadow: 0 -2px 10px rgba(0,0,0,0.1); 
+            z-index: 9999; 
+            text-align: center;
+            animation: slideUp 0.5s ease-out;
+        }
+        @keyframes slideUp {
+            from { transform: translateY(100%); }
+            to { transform: translateY(0); }
+        }
+        #btn-resume-payment {
+            background-color: #0d6efd; 
+            color: white; 
+            border: none; 
+            padding: 8px 20px; 
+            border-radius: 5px; 
+            cursor: pointer; 
+            font-weight: bold;
+            margin-left: 10px;
+            font-family: 'Montserrat', sans-serif;
+        }
+        #btn-resume-payment:hover {
+            background-color: #0b5ed7;
+        }
     </style>
 </head>
 <body>
 
-<?php include 'includes/header.php'; ?> <section class="page-hero">
+<?php include 'includes/header.php'; ?> 
+
+    <section class="page-hero">
         <div class="container">
             <h1>Our Menu</h1>
             <p>Nikmati kopi, teh, dan camilan favoritmu dalam suasana yang nyaman</p>
@@ -119,9 +156,6 @@ $table_numbers = range(1, $table_count);
                 
                 <?php foreach ($products as $product): ?>
                     <?php
-                        // Kita sudah tahu produk ini pasti tersedia
-                        // Kita hanya perlu mem-filter varian mana yang akan ditampilkan
-                        
                         $image_url = !empty($product['image_url']) 
                             ? htmlspecialchars($product['image_url']) 
                             : 'https://placehold.co/300x300/e8e4d8/5c6e58?text=' . urlencode($product['name']);
@@ -231,11 +265,20 @@ $table_numbers = range(1, $table_count);
             </div>
         </div>
     </div>
+
+    <div id="resume-payment-bar">
+        <div style="display: flex; justify-content: center; align-items: center; gap: 15px; flex-wrap: wrap;">
+            <span style="color: #856404; font-weight: 500; font-family: 'Montserrat', sans-serif;">
+                <i class="fas fa-exclamation-circle"></i> 
+                Menunggu pembayaran untuk <strong>Order #<span id="resume-order-id"></span></strong>.
+            </span>
+            <button id="btn-resume-payment">
+                Bayar Sekarang <i class="fas fa-chevron-right"></i>
+            </button>
+        </div>
+    </div>
     
 <script>
-// (PERBAIKAN POIN 1) Logika JavaScript tidak perlu diubah
-// karena perbaikan penuh ada di sisi PHP.
-// Kita hanya perlu memastikan harga awal di-set dengan benar.
 document.addEventListener('DOMContentLoaded', () => {
     const cartIcon = document.getElementById('cart-icon');
     const cartModal = document.getElementById('cart-modal');
@@ -316,7 +359,6 @@ document.addEventListener('DOMContentLoaded', () => {
         });
     });
     
-    // (DIUBAH) Update harga saat varian diganti
     document.querySelectorAll('.item-variants input[type="radio"]').forEach(radio => {
         radio.addEventListener('change', (e) => {
             if (e.target.checked) {
@@ -327,7 +369,7 @@ document.addEventListener('DOMContentLoaded', () => {
             }
         });
     });
-    // (DIUBAH) Set harga awal yang benar
+    
     document.querySelectorAll('.menu-item').forEach(menuItem => {
         const variantInput = menuItem.querySelector('.item-variants input[type="radio"]:checked');
         if (variantInput) {
@@ -416,13 +458,12 @@ document.addEventListener('DOMContentLoaded', () => {
         if (cart.length > 0) {
             sessionStorage.setItem('cartData', JSON.stringify(cart));
             sessionStorage.setItem('cartTotalPrice', totalPrice);
-            window.location.href = 'payment.php'; //
+            window.location.href = 'payment.php'; 
         } else {
             alert('Keranjang Anda kosong! Silakan tambahkan item untuk memesan.');
         }
     });
 
-    // === (LOGIKA STATUS PESANAN - DIUBAH) ===
     const openStatusModal = () => {
         updateOrderStatusView();
         orderStatusModal.classList.add('show');
@@ -434,13 +475,10 @@ document.addEventListener('DOMContentLoaded', () => {
         if (e.target === orderStatusModal) closeStatusModal();
     });
     
-    // (DIUBAH) Fungsi ini sekarang akan me-render SEMUA pesanan aktif
     window.updateOrderStatusView = function() {
         let orderStatusKey = `orderStatusData_MEJA_${currentTableNumber}`;
-        // (DIUBAH) Ambil array pesanan
         let currentOrdersArray = JSON.parse(sessionStorage.getItem(orderStatusKey));
         
-        // (DIUBAH) Cek jika ini adalah array dan tidak kosong
         if (!currentOrdersArray || !Array.isArray(currentOrdersArray) || currentOrdersArray.length === 0) {
             orderStatusDetailsContainer.innerHTML = `<div class="cart-empty-message"><p>Tidak ada pesanan aktif untuk meja ini.</p></div>`;
             return;
@@ -448,9 +486,8 @@ document.addEventListener('DOMContentLoaded', () => {
         
         let combinedHTML = '';
         
-        // (DIUBAH) Loop untuk setiap pesanan di dalam array
         currentOrdersArray.forEach(currentOrderData => {
-            if (!currentOrderData || !currentOrderData.items) return; // Lewati jika ada data invalid
+            if (!currentOrderData || !currentOrderData.items) return; 
 
             let itemsHTML = currentOrderData.items.map(item => {
                 const variantHTML = (item.variant && item.variant.trim() !== "") ? ` (${htmlspecialchars(item.variant)})` : '';
@@ -470,7 +507,6 @@ document.addEventListener('DOMContentLoaded', () => {
                 ? `<div class="status-item"><small><strong>Catatan Utama:</strong> ${htmlspecialchars(currentOrderData.notes)}</small></div>`
                 : '';
             
-            // (DIUBAH) Bungkus setiap pesanan dalam wrapper-nya sendiri
             combinedHTML += `
                 <div class="status-order-instance">
                     <div class="status-header">
@@ -494,20 +530,18 @@ document.addEventListener('DOMContentLoaded', () => {
         
         const poll = () => {
             const cacheBuster = `&_=${new Date().getTime()}`;
-            fetch(`actions/get_order_status.php?meja=${currentTableNumber}${cacheBuster}`) //
+            fetch(`actions/get_order_status.php?meja=${currentTableNumber}${cacheBuster}`) 
                 .then(response => response.json())
                 .then(data => {
                     let orderStatusKey = `orderStatusData_MEJA_${currentTableNumber}`;
                     
-                    // (DIUBAH) Cek 'data.orders' (array)
                     if (data.status === 'found' && data.orders && data.orders.length > 0) { 
                         orderStatusIcon.style.display = 'flex';
-                        // (DIUBAH) Simpan seluruh array
                         sessionStorage.setItem(orderStatusKey, JSON.stringify(data.orders)); 
                         if (orderStatusModal.classList.contains('show')) {
                             updateOrderStatusView();
                         }
-                    } else if (data.status === 'empty') { //
+                    } else if (data.status === 'empty') { 
                         orderStatusIcon.style.display = 'none';
                         sessionStorage.removeItem(orderStatusKey);
                     }
@@ -523,7 +557,51 @@ document.addEventListener('DOMContentLoaded', () => {
     }
     
     updateCart();
-    checkOrderStatus(); // Mulai logika status
+    checkOrderStatus(); 
+
+    // === [LOGIKA BARU] RESUME PAYMENT (TANPA TOMBOL ABAIKAN) ===
+    const pendingToken = sessionStorage.getItem('pending_snap_token');
+    const pendingOrderId = sessionStorage.getItem('pending_order_id');
+    const resumeBar = document.getElementById('resume-payment-bar');
+    const resumeOrderIdSpan = document.getElementById('resume-order-id');
+    const btnResume = document.getElementById('btn-resume-payment');
+
+    // Cek apakah ada pembayaran tertunda di sesi browser
+    if (pendingToken && pendingOrderId) {
+        resumeOrderIdSpan.textContent = pendingOrderId;
+        resumeBar.style.display = 'block'; // Munculkan bar
+    }
+
+    // Aksi Tombol Bayar Sekarang
+    if (btnResume) {
+        btnResume.addEventListener('click', () => {
+            if (typeof window.snap !== 'undefined' && pendingToken) {
+                window.snap.pay(pendingToken, {
+                    onSuccess: function(result){
+                        alert("Pembayaran Berhasil! Terima kasih.");
+                        // Hapus token pending
+                        sessionStorage.removeItem('pending_snap_token');
+                        sessionStorage.removeItem('pending_order_id');
+                        resumeBar.style.display = 'none';
+                        window.location.reload(); // Refresh halaman agar polling status jalan
+                    },
+                    onPending: function(result){
+                        alert("Menunggu pembayaran...");
+                        window.location.reload();
+                    },
+                    onError: function(result){
+                        alert("Pembayaran gagal! Silakan coba lagi.");
+                    },
+                    onClose: function(){
+                        alert('Anda menutup popup. Pembayaran tetap tertunda.');
+                        // Bar tetap muncul karena kita tidak menghapus token
+                    }
+                });
+            } else {
+                alert("Sistem pembayaran belum siap atau token kadaluarsa. Silakan refresh halaman.");
+            }
+        });
+    }
 });
 </script>
 </body>

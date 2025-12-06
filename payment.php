@@ -166,6 +166,7 @@ document.addEventListener('DOMContentLoaded', () => {
         });
     });
 
+
     // --- [INTEGRASI MIDTRANS 2] LOGIKA TOMBOL & POPUP ---
     const confirmOrderBtn = document.getElementById('confirm-order-btn');
 
@@ -182,39 +183,40 @@ document.addEventListener('DOMContentLoaded', () => {
             const payload = {
                 cartData: currentCartData,
                 tableNumber: currentTableNumber,
-                // Pastikan nilai dikirim sesuai backend ('QRIS' atau 'Cash')
                 paymentMethod: selectedPaymentMethod === 'qris' ? 'QRIS' : 'Cash' 
             };
-
-            // ... kode sebelumnya (payload definition) ...
 
             fetch('actions/handle_order.php', {
                 method: 'POST',
                 headers: { 'Content-Type': 'application/json' },
                 body: JSON.stringify(payload)
             })
-            // [MODIFIKASI DEBUG] Ubah cara handle respon untuk cek error PHP
+            // ... (Bagian debug response.text() tidak berubah) ...
             .then(response => {
                 return response.text().then(text => {
-                    try {
-                        return JSON.parse(text); // Coba ubah teks jadi JSON
-                    } catch (err) {
-                        // Jika gagal, berarti server mengirim Error HTML/Text
-                        console.error('Server Error:', text);
-                        throw new Error('Respon Server Bukan JSON:\n' + text.substring(0, 300)); // Ambil 300 huruf pertama error
-                    }
+                    try { return JSON.parse(text); } 
+                    catch (err) { throw new Error('Respon Server Bukan JSON:\n' + text.substring(0, 300)); }
                 });
             })
             .then(data => {
                 if (data.status === 'success') {
-                    // [LOGIKA SUKSES]
+                    
+                    // A. JIKA ADA SNAP TOKEN (Metode QRIS/Online)
                     if (data.snap_token) {
+                        // [LANGKAH 1] SIMPAN TOKEN KE SESSION STORAGE
+                        // Ini kunci agar pembayaran bisa dilanjutkan di menu.php
+                        sessionStorage.setItem('pending_snap_token', data.snap_token);
+                        sessionStorage.setItem('pending_order_id', data.order_id);
+
                         window.snap.pay(data.snap_token, {
                             onSuccess: function(result){
+                                // Pembayaran sukses -> Hapus token pending
+                                sessionStorage.removeItem('pending_snap_token');
+                                sessionStorage.removeItem('pending_order_id');
                                 finalizeClientSideOrder(data.order_id, currentCartData, currentTableNumber, grandTotal, payload);
                             },
                             onPending: function(result){
-                                alert("Menunggu pembayaran.");
+                                alert("Menunggu pembayaran. Cek status di Menu.");
                                 finalizeClientSideOrder(data.order_id, currentCartData, currentTableNumber, grandTotal, payload);
                             },
                             onError: function(result){
@@ -223,19 +225,19 @@ document.addEventListener('DOMContentLoaded', () => {
                                 confirmOrderBtn.textContent = 'Konfirmasi Pesanan';
                             },
                             onClose: function(){
-                                alert('Anda menutup popup.');
-                                confirmOrderBtn.disabled = false;
-                                confirmOrderBtn.textContent = 'Konfirmasi Pesanan';
+                                // [LANGKAH 2] REDIRECT KE MENU JIKA DI-CLOSE
+                                alert('Anda menutup popup. Silakan lanjutkan pembayaran di halaman Menu.');
+                                window.location.href = `menu.php?meja=${currentTableNumber}`;
                             }
                         });
-                    } else {
-                        // Cash
+                    } 
+                    // B. CASH (Tidak berubah)
+                    else {
                         alert('Pesanan berhasil dibuat. Silakan menuju kasir.');
                         finalizeClientSideOrder(data.order_id, currentCartData, currentTableNumber, grandTotal, payload);
                     }
 
                 } else {
-                    // Error dari logika PHP (JSON valid tapi status error)
                     alert('Gagal membuat pesanan: ' + data.message);
                     confirmOrderBtn.disabled = false;
                     confirmOrderBtn.textContent = 'Konfirmasi Pesanan';
@@ -243,9 +245,7 @@ document.addEventListener('DOMContentLoaded', () => {
             })
             .catch(error => {
                 console.error('Error:', error);
-                // Tampilkan error asli di Alert agar ketahuan penyebabnya
                 alert('TERJADI ERROR:\n' + error.message);
-                
                 confirmOrderBtn.disabled = false;
                 confirmOrderBtn.textContent = 'Konfirmasi Pesanan';
             });
@@ -254,6 +254,8 @@ document.addEventListener('DOMContentLoaded', () => {
             window.location.href = 'menu.php';
         }
     });
+
+
 
     /**
      * Fungsi Helper untuk menyimpan data ke SessionStorage (agar halaman Status bisa membacanya)

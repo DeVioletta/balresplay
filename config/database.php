@@ -490,8 +490,8 @@ function getTopMenus($db, $start_date = null, $end_date = null) {
  * @return array
  */
 function getDashboardOrderDetails($db, $start_date = null, $end_date = null) {
-     // Siapkan filter tanggal
-    $date_filter = "WHERE o.status != 'Dibatalkan'";
+    // [MODIFIKASI] Ubah filter dari != 'Dibatalkan' menjadi = 'Selesai'
+    $date_filter = "WHERE o.status = 'Selesai'"; 
     $types = "";
     $params = [];
 
@@ -525,7 +525,7 @@ function getDashboardOrderDetails($db, $start_date = null, $end_date = null) {
         JOIN products p ON pv.product_id = p.product_id
         $date_filter
         ORDER BY o.order_time DESC, o.order_id DESC
-        LIMIT 100 -- Batasi 100 data terbaru
+        LIMIT 100 
     ";
     
     $stmt = $db->prepare($sql);
