@@ -44,7 +44,7 @@
 
 .order-card-header span {
     font-size: 0.9rem;
-    color: var(--text-muted);
+    /* color: var(--text-muted); */
 }
 .order-card-header span strong {
     color: var(--accent-color);

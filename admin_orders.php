@@ -1,13 +1,12 @@
 <?php
-date_default_timezone_set('Asia/Jakarta'); // (PERBAIKAN POIN 4)
+date_default_timezone_set('Asia/Jakarta');
 require_once __DIR__ . '/config/database.php';
 startSecureSession();
 redirectIfNotLoggedIn('admin_login.php');
 
 $role = $_SESSION['role'];
-// (PERBAIKAN POIN 2) Role check
+
 if ($role == 'Dapur') {
-    // Dapur tidak bisa akses halaman ini, tendang ke KDS
     $_SESSION['error_message'] = 'Halaman pesanan Anda ada di Antrian Dapur.';
     header("Location: kitchen_display.php");
     exit();
@@ -18,16 +17,16 @@ if ($role !== 'Kasir' && $role !== 'Super Admin') {
      exit();
 }
 
-// (Fungsi getOrdersForAdmin tidak berubah)
 function getOrdersForAdmin($db, $is_history = false) {
     if ($is_history) {
         $status_filter = "IN ('Selesai', 'Dibatalkan')";
     } else {
         $status_filter = "IN ('Menunggu Pembayaran', 'Kirim ke Dapur', 'Sedang Dimasak', 'Siap Diantar')";
     }
+    // [PERBAIKAN 1] Tambahkan o.payment_method ke dalam Query
     $sql = "
         SELECT 
-            o.order_id, o.table_number, o.status, o.notes, o.order_time, o.total_price,
+            o.order_id, o.table_number, o.status, o.notes, o.order_time, o.total_price, o.payment_method,
             oi.quantity, pv.variant_name, p.name as product_name
         FROM orders o
         LEFT JOIN order_items oi ON o.order_id = oi.order_id
@@ -43,8 +42,13 @@ function getOrdersForAdmin($db, $is_history = false) {
         $order_id = $row['order_id'];
         if (!isset($orders[$order_id])) {
             $orders[$order_id] = [
-                'order_id' => $order_id, 'table_number' => $row['table_number'], 'status' => $row['status'],
-                'notes' => $row['notes'], 'total_price' => $row['total_price'], 'order_time' => $row['order_time'],
+                'order_id' => $order_id, 
+                'table_number' => $row['table_number'], 
+                'status' => $row['status'],
+                'notes' => $row['notes'], 
+                'total_price' => $row['total_price'], 
+                'order_time' => $row['order_time'],
+                'payment_method' => $row['payment_method'], // Simpan payment method
                 'items' => []
             ];
         }
@@ -60,10 +64,6 @@ function getOrdersForAdmin($db, $is_history = false) {
 $active_orders = getOrdersForAdmin($db, false);
 $history_orders = getOrdersForAdmin($db, true);
 
-// (PERBAIKAN POIN 2) Status hanya untuk Kasir/SA
-$role_statuses = ['Menunggu Pembayaran', 'Kirim ke Dapur', 'Siap Diantar', 'Selesai', 'Dibatalkan'];
-
-// (BARU) Status untuk filter dropdown
 $active_filter_statuses = ['Menunggu Pembayaran', 'Kirim ke Dapur', 'Sedang Dimasak', 'Siap Diantar'];
 ?>
 
@@ -73,7 +73,7 @@ $active_filter_statuses = ['Menunggu Pembayaran', 'Kirim ke Dapur', 'Sedang Dima
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>Admin | Manajemen Pesanan</title>
-    <meta http-equiv="refresh" content="30">
+    <meta http-equiv="refresh" content="30"> 
     <link rel="stylesheet" href="css/variable.css">
     <link rel="stylesheet" href="css/admin_menu.css">
     <link rel="stylesheet" href="css/admin_orders.css">
@@ -82,7 +82,6 @@ $active_filter_statuses = ['Menunggu Pembayaran', 'Kirim ke Dapur', 'Sedang Dima
     <link href="https://fonts.googleapis.com/css2?family=Cormorant+Garamond:wght@300;400;600;700&family=Montserrat:wght@300;400;500&display=swap" rel="stylesheet">
     <style>
         .status-select:disabled { opacity: 0.5; cursor: not-allowed; background-color: var(--tertiary-color); }
-        /* (BARU) Style untuk filter group di toolbar */
         .order-toolbar {
             display: flex;
             flex-wrap: wrap;
@@ -109,6 +108,23 @@ $active_filter_statuses = ['Menunggu Pembayaran', 'Kirim ke Dapur', 'Sedang Dima
             border-radius: 5px;
             font-family: "Montserrat", sans-serif;
         }
+        /* Badge Pembayaran */
+        .payment-badge {
+            font-size: 0.8rem;
+            padding: 4px 8px;
+            border-radius: 4px;
+            margin-left: 8px;
+            font-weight: bold;
+        }
+        .payment-qris {    
+            background-color: #0a2a43;   /* Navy cyan gelap */
+            color: #4fb3ff;             /* Biru muda */
+            border: 1px solid #1d8cf8;  /* Biru electric */}
+        .payment-cash {
+                background-color: #0c2f1d;   /* Hijau sangat gelap */
+                color: #6ee7b7;              /* Mint/hijau soft */
+                border: 1px solid #27ae60;   /* Hijau terang */
+        }
     </style>
 </head>
 <body>
@@ -123,46 +139,27 @@ $active_filter_statuses = ['Menunggu Pembayaran', 'Kirim ke Dapur', 'Sedang Dima
             </div>
             
             <nav class="nav-list">
-                <?php 
-                $currentPage = basename($_SERVER['PHP_SELF']); 
-                ?>
+                <?php $currentPage = basename($_SERVER['PHP_SELF']); ?>
                 
                 <?php if ($role == 'Super Admin' || $role == 'Kasir'): ?>
-                    <a href="admin_dashboard.php" 
-                       class="<?php echo $currentPage == 'admin_dashboard.php' ? 'active' : ''; ?>">
-                       <i class="fas fa-tachometer-alt"></i> Dashboard
-                    </a>
+                    <a href="admin_dashboard.php" class="<?php echo $currentPage == 'admin_dashboard.php' ? 'active' : ''; ?>"><i class="fas fa-tachometer-alt"></i> Dashboard</a>
                 <?php endif; ?>
                 
-                <a href="admin_menu.php" 
-                   class="<?php echo ($currentPage == 'admin_menu.php' || $currentPage == 'admin_form_menu.php') ? 'active' : ''; ?>">
-                   <i class="fas fa-utensils"></i> Menu Cafe
-                </a>
+                <a href="admin_menu.php" class="<?php echo ($currentPage == 'admin_menu.php' || $currentPage == 'admin_form_menu.php') ? 'active' : ''; ?>"><i class="fas fa-utensils"></i> Menu Cafe</a>
                 
                 <?php if ($role == 'Dapur'): ?>
-                     <a href="kitchen_display.php" 
-                       class="<?php echo $currentPage == 'kitchen_display.php' ? 'active' : ''; ?>">
-                       <i class="fas fa-receipt"></i> Antrian Dapur
-                    </a>
-                <?php else: // Super Admin & Kasir ?>
-                    <a href="admin_orders.php" 
-                       class="<?php echo $currentPage == 'admin_orders.php' ? 'active' : ''; ?>">
-                       <i class="fas fa-receipt"></i> Pesanan
-                    </a>
+                     <a href="kitchen_display.php" class="<?php echo $currentPage == 'kitchen_display.php' ? 'active' : ''; ?>"><i class="fas fa-receipt"></i> Antrian Dapur</a>
+                <?php else: ?>
+                    <a href="admin_orders.php" class="<?php echo $currentPage == 'admin_orders.php' ? 'active' : ''; ?>"><i class="fas fa-receipt"></i> Pesanan</a>
                 <?php endif; ?>
                 
                 <?php if ($role == 'Super Admin'): ?>
-                    <a href="admin_settings.php" 
-                       class="<?php echo $currentPage == 'admin_settings.php' ? 'active' : ''; ?>">
-                       <i class="fas fa-cog"></i> Pengaturan
-                    </a>
+                    <a href="admin_settings.php" class="<?php echo $currentPage == 'admin_settings.php' ? 'active' : ''; ?>"><i class="fas fa-cog"></i> Pengaturan</a>
                 <?php endif; ?>
             </nav>
 
             <div class="sidebar-footer">
-                <a href="actions/handle_logout.php" class="logout-link">
-                    <i class="fas fa-sign-out-alt"></i> Logout
-                </a>
+                <a href="actions/handle_logout.php" class="logout-link"><i class="fas fa-sign-out-alt"></i> Logout</a>
             </div>
         </aside>
 
@@ -180,9 +177,7 @@ $active_filter_statuses = ['Menunggu Pembayaran', 'Kirim ke Dapur', 'Sedang Dima
                     <select id="status-filter-admin" name="status">
                         <option value="all">Semua Status Aktif</option>
                         <?php foreach ($active_filter_statuses as $status): ?>
-                            <option value="<?php echo htmlspecialchars($status); ?>">
-                                <?php echo htmlspecialchars($status); ?>
-                            </option>
+                            <option value="<?php echo htmlspecialchars($status); ?>"><?php echo htmlspecialchars($status); ?></option>
                         <?php endforeach; ?>
                     </select>
                 </div>
@@ -198,10 +193,20 @@ $active_filter_statuses = ['Menunggu Pembayaran', 'Kirim ke Dapur', 'Sedang Dima
                     <h3 style="color: var(--text-muted); grid-column: 1 / -1;">Tidak ada pesanan aktif.</h3>
                 <?php else: ?>
                     <?php foreach ($active_orders as $order): ?>
+                        <?php 
+                            // Cek tipe pembayaran
+                            $paymentMethod = $order['payment_method'];
+                            $isQRIS = ($paymentMethod === 'QRIS');
+                            $badgeClass = $isQRIS ? 'payment-qris' : 'payment-cash';
+                        ?>
                         <div class="order-card" data-status="<?php echo htmlspecialchars($order['status']); ?>">
                             <div class="order-card-header">
                                 <div>
-                                    <h4>Order #<?php echo $order['order_id']; ?></h4>
+                                    <h4>Order #<?php echo $order['order_id']; ?> 
+                                        <span class="payment-badge <?php echo $badgeClass; ?>">
+                                            <?php echo htmlspecialchars($paymentMethod); ?>
+                                        </span>
+                                    </h4>
                                     <span>Meja: <strong><?php echo $order['table_number']; ?></strong></span>
                                 </div>
                                 <span class="order-time">
@@ -253,40 +258,53 @@ $active_filter_statuses = ['Menunggu Pembayaran', 'Kirim ke Dapur', 'Sedang Dima
                                 
                                 <?php if ($role == 'Kasir' || $role == 'Super Admin'): ?>
                                     <div class="order-card-actions">
-                                        <label for="status-<?php echo $order['order_id']; ?>">Update Status:</label>
-                                        <select id="status-<?php echo $order['order_id']; ?>" name="status" class="status-select" data-order-id="<?php echo $order['order_id']; ?>"
-                                            <?php 
-                                            $current_status = $order['status'];
-                                            $is_dapur_status = in_array($current_status, ['Kirim ke Dapur', 'Sedang Dimasak']);
-                                            
-                                            if ($role == 'Kasir' && $is_dapur_status) {
-                                                echo 'disabled';
-                                            }
-                                            ?>>
-                                            
-                                            <?php
-                                            $options = [];
-                                            
-                                            if ($role == 'Super Admin') {
-                                                // Super Admin dapat memilih SEMUA status
-                                                $options = ['Menunggu Pembayaran', 'Kirim ke Dapur', 'Sedang Dimasak', 'Siap Diantar', 'Selesai', 'Dibatalkan'];
-                                            } else {
-                                                // Logika Kasir (tetap)
-                                                if ($current_status == 'Menunggu Pembayaran') {
-                                                    $options = ['Menunggu Pembayaran', 'Kirim ke Dapur', 'Dibatalkan'];
-                                                } else if ($is_dapur_status) {
-                                                    $options = [$current_status]; 
-                                                } else if ($current_status == 'Siap Diantar') {
-                                                    $options = ['Siap Diantar', 'Selesai', 'Dibatalkan'];
+                                        
+                                        <?php if ($isQRIS && $order['status'] == 'Menunggu Pembayaran'): ?>
+                                            <div style="text-align: center; margin-bottom: 10px;">
+                                                <small style="color: #d32f2f; display: block; margin-bottom: 5px;">
+                                                    <i class="fas fa-info-circle"></i> Menunggu Konfirmasi Midtrans
+                                                </small>
+                                                <label for="status-<?php echo $order['order_id']; ?>">Aksi Darurat:</label>
+                                                <select id="status-<?php echo $order['order_id']; ?>" name="status" class="status-select" data-order-id="<?php echo $order['order_id']; ?>">
+                                                    <option value="Menunggu Pembayaran" selected>Menunggu...</option>
+                                                    <option value="Dibatalkan">Batalkan Pesanan</option>
+                                                </select>
+                                            </div>
+                                        
+                                        <?php else: ?>
+                                            <label for="status-<?php echo $order['order_id']; ?>">Update Status:</label>
+                                            <select id="status-<?php echo $order['order_id']; ?>" name="status" class="status-select" data-order-id="<?php echo $order['order_id']; ?>"
+                                                <?php 
+                                                $current_status = $order['status'];
+                                                $is_dapur_status = in_array($current_status, ['Kirim ke Dapur', 'Sedang Dimasak']);
+                                                
+                                                if ($role == 'Kasir' && $is_dapur_status) {
+                                                    echo 'disabled';
                                                 }
-                                            }
-                                            
-                                            // Tampilkan opsi yang diizinkan
-                                            foreach ($options as $status) {
-                                                echo "<option value=\"$status\" " . ($current_status == $status ? 'selected' : '') . ">$status</option>";
-                                            }
-                                            ?>
-                                        </select>
+                                                ?>>
+                                                
+                                                <?php
+                                                $options = [];
+                                                
+                                                if ($role == 'Super Admin') {
+                                                    $options = ['Menunggu Pembayaran', 'Kirim ke Dapur', 'Sedang Dimasak', 'Siap Diantar', 'Selesai', 'Dibatalkan'];
+                                                } else {
+                                                    if ($current_status == 'Menunggu Pembayaran') {
+                                                        $options = ['Menunggu Pembayaran', 'Kirim ke Dapur', 'Dibatalkan'];
+                                                    } else if ($is_dapur_status) {
+                                                        $options = [$current_status]; 
+                                                    } else if ($current_status == 'Siap Diantar') {
+                                                        $options = ['Siap Diantar', 'Selesai', 'Dibatalkan'];
+                                                    }
+                                                }
+                                                
+                                                foreach ($options as $status) {
+                                                    echo "<option value=\"$status\" " . ($current_status == $status ? 'selected' : '') . ">$status</option>";
+                                                }
+                                                ?>
+                                            </select>
+                                        <?php endif; ?>
+
                                     </div>
                                 <?php endif; ?>
                             </div>
@@ -303,7 +321,11 @@ $active_filter_statuses = ['Menunggu Pembayaran', 'Kirim ke Dapur', 'Sedang Dima
                         <div class="order-card" data-status="<?php echo htmlspecialchars($order['status']); ?>">
                             <div class="order-card-header">
                                 <div>
-                                    <h4>Order #<?php echo $order['order_id']; ?></h4>
+                                    <h4>Order #<?php echo $order['order_id']; ?> 
+                                        <span class="payment-badge <?php echo ($order['payment_method'] === 'QRIS') ? 'payment-qris' : 'payment-cash'; ?>">
+                                            <?php echo htmlspecialchars($order['payment_method']); ?>
+                                        </span>
+                                    </h4>
                                     <span>Meja: <strong><?php echo $order['table_number']; ?></strong></span>
                                 </div>
                                 <span class="order-time"><?php echo date('d M Y, H:i', strtotime($order['order_time'])); ?></span>
@@ -326,20 +348,19 @@ $active_filter_statuses = ['Menunggu Pembayaran', 'Kirim ke Dapur', 'Sedang Dima
         </main>
         
         <div class="sidebar-overlay" id="sidebar-overlay"></div>
-
         <div id="refresh-bar"></div>
     </div>
 
     <script>
         document.addEventListener('DOMContentLoaded', () => {
-            // Sidebar (Kode tidak berubah)
+            // Sidebar
             const hamburger = document.getElementById('hamburger');
             const sidebar = document.getElementById('sidebar');
             const overlay = document.getElementById('sidebar-overlay');
             if (hamburger) hamburger.addEventListener('click', () => sidebar.classList.add('show'));
             if (overlay) overlay.addEventListener('click', () => sidebar.classList.remove('show'));
 
-            // Toggle Riwayat (Kode tidak berubah)
+            // Toggle Riwayat
             const toggleBtn = document.getElementById('toggle-view-btn');
             const activeGrid = document.getElementById('active-orders-grid');
             const historyGrid = document.getElementById('history-orders-grid');
@@ -359,12 +380,10 @@ $active_filter_statuses = ['Menunggu Pembayaran', 'Kirim ke Dapur', 'Sedang Dima
                 });
             }
 
-            // --- (BARU) Logika Filter Status Admin ---
+            // Filter Status
             const statusFilterAdmin = document.getElementById('status-filter-admin');
-            
             if (statusFilterAdmin && activeGrid) {
                 const allAdminItems = activeGrid.querySelectorAll('.order-card');
-                
                 if (allAdminItems.length > 0) {
                     let noAdminResultsMessage = document.createElement('h3');
                     noAdminResultsMessage.textContent = 'Tidak ada pesanan yang cocok dengan filter status.';
@@ -376,27 +395,22 @@ $active_filter_statuses = ['Menunggu Pembayaran', 'Kirim ke Dapur', 'Sedang Dima
                     function filterAdminOrders() {
                         const selectedStatus = statusFilterAdmin.value;
                         let itemsFound = 0;
-
                         allAdminItems.forEach(item => {
                             const itemStatus = item.dataset.status;
                             if (selectedStatus === 'all' || itemStatus === selectedStatus) {
-                                item.style.display = 'block'; // Kartu adalah block
+                                item.style.display = 'block';
                                 itemsFound++;
                             } else {
                                 item.style.display = 'none';
                             }
                         });
-
                         noAdminResultsMessage.style.display = (itemsFound === 0) ? 'block' : 'none';
                     }
-
                     statusFilterAdmin.addEventListener('change', filterAdminOrders);
                 }
             }
-            // --- Akhir Logika Filter Status Admin ---
 
-
-            // LOGIKA UPDATE STATUS DENGAN KONFIRMASI (Kode tidak berubah)
+            // LOGIKA UPDATE STATUS
             const activeOrdersGrid = document.getElementById('active-orders-grid');
             if (activeOrdersGrid) {
                 activeOrdersGrid.addEventListener('change', (e) => {
@@ -407,17 +421,13 @@ $active_filter_statuses = ['Menunggu Pembayaran', 'Kirim ke Dapur', 'Sedang Dima
                         const card = selectElement.closest('.order-card');
                         const originalStatus = card.dataset.status;
                         
-                        // Logika Konfirmasi Pop-up
                         let isConfirmed = true;
                         if (newStatus === 'Selesai') {
-                            // Mengembalikan alert Selesai
-                            isConfirmed = confirm(`Anda yakin ingin menyelesaikan Pesanan #${orderId}? Pesanan akan dipindahkan ke riwayat.`);
+                            isConfirmed = confirm(`Anda yakin ingin menyelesaikan Pesanan #${orderId}?`);
                         } else if (newStatus === 'Dibatalkan') {
-                            // Mengembalikan alert Dibatalkan
-                            isConfirmed = confirm(`ANDA YAKIN ingin membatalkan Pesanan #${orderId}? Aksi ini tidak dapat diurungkan.`);
+                            isConfirmed = confirm(`ANDA YAKIN ingin membatalkan Pesanan #${orderId}?`);
                         } else if (newStatus !== originalStatus) {
-                            // Mengembalikan alert perubahan status lainnya
-                            isConfirmed = confirm(`Anda yakin ingin mengubah status Pesanan #${orderId} dari ${originalStatus} menjadi ${newStatus}?`);
+                            isConfirmed = confirm(`Ubah status Pesanan #${orderId} ke ${newStatus}?`);
                         }
 
                         if (!isConfirmed) {
@@ -436,16 +446,9 @@ $active_filter_statuses = ['Menunggu Pembayaran', 'Kirim ke Dapur', 'Sedang Dima
                         .then(response => response.json())
                         .then(data => {
                             if (data.status === 'success') {
-                                if (newStatus === 'Selesai' || newStatus === 'Dibatalkan') {
-                                     // Mengembalikan alert sukses Selesai/Batal
-                                     alert('Status diperbarui! Pesanan dipindahkan ke Riwayat.');
-                                } else {
-                                     // Mengembalikan alert sukses biasa
-                                     alert('Status diperbarui!');
-                                }
+                                alert(data.message);
                                 window.location.reload();
                             } else {
-                                // Mengembalikan alert gagal
                                 alert('Gagal: ' + data.message);
                                 selectElement.value = originalStatus;
                                 selectElement.disabled = false;
@@ -453,7 +456,6 @@ $active_filter_statuses = ['Menunggu Pembayaran', 'Kirim ke Dapur', 'Sedang Dima
                         })
                         .catch(error => {
                             console.error('Error:', error);
-                            // Mengembalikan alert koneksi bermasalah
                             alert('Terjadi kesalahan koneksi.');
                             selectElement.value = originalStatus;
                             selectElement.disabled = false;
