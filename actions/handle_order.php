@@ -1,102 +1,96 @@
 <?php
-require_once __DIR__ . '/../config/database.php';
-startSecureSession();
+// FILE: balresplay/actions/handle_order.php
 
-// Set header respons ke JSON karena file ini akan diakses oleh fetch()
+// Matikan output error HTML agar tidak merusak JSON
+ini_set('display_errors', 0);
+error_reporting(E_ALL);
+
+require_once __DIR__ . '/../config/database.php';
+require_once __DIR__ . '/midtrans.php';
+
+startSecureSession();
 header('Content-Type: application/json');
 
-// 1. Baca data JSON mentah dari body request
-// Kita tidak menggunakan $_POST karena fetch() mengirim JSON sebagai raw body
-$json_data = file_get_contents('php://input');
-$data = json_decode($json_data, true);
-
-// 2. Validasi data input
-if (empty($data) || !isset($data['cartData']) || !isset($data['tableNumber']) || !isset($data['paymentMethod']) || empty($data['cartData'])) {
-    // Kirim error jika data tidak lengkap
-    echo json_encode(['status' => 'error', 'message' => 'Data pesanan tidak lengkap.']);
-    exit;
-}
-
-// Ambil data dari JSON yang sudah di-decode
-$cart_data = $data['cartData'];
-$table_number = (int)$data['tableNumber'];
-$payment_method = $data['paymentMethod']; // 'Cash' atau 'QRIS'
-$service_fee = 2000; // Biaya layanan (sesuai hardcode di payment.php)
-
-// Mulai transaksi database
-// Ini penting agar jika salah satu item gagal, seluruh pesanan dibatalkan
-$db->begin_transaction();
-
 try {
-    // 3. Hitung total harga dan gabungkan semua catatan item
+    // 1. Ambil data JSON
+    $json_data = file_get_contents('php://input');
+    $data = json_decode($json_data, true);
+
+    if (empty($data) || !isset($data['cartData'])) {
+        throw new Exception("Data pesanan tidak lengkap.");
+    }
+
+    $cart_data = $data['cartData'];
+    $table_number = (int)$data['tableNumber'];
+    $payment_method = $data['paymentMethod']; 
+    $service_fee = 2000;
+
+    // 2. Mulai Transaksi Database
+    $db->begin_transaction();
+
+    // Hitung Total
     $total_price = $service_fee;
-    $all_notes = [];
+    $notes_arr = [];
     foreach ($cart_data as $item) {
-        $total_price += (float)$item['price'] * (int)$item['quantity'];
-        // Gabungkan catatan jika ada
-        if (!empty($item['notes'])) {
-            $all_notes[] = htmlspecialchars($item['name']) . ": " . htmlspecialchars($item['notes']);
+        $total_price += ($item['price'] * $item['quantity']);
+        if(!empty($item['notes'])) {
+            $notes_arr[] = $item['name'] . ": " . $item['notes'];
         }
     }
-    // Gabungkan semua catatan menjadi satu string, dipisah dengan "; "
-    $notes_string = implode('; ', $all_notes);
+    $notes_string = implode("; ", $notes_arr);
 
-    // 4. Masukkan data pesanan utama ke tabel 'orders'
-    // Kita gunakan status 'Menunggu Pembayaran' sesuai rencana 6 status
-    $stmt_order = $db->prepare(
-        "INSERT INTO orders (table_number, total_price, payment_method, notes, status, order_time) 
-         VALUES (?, ?, ?, ?, 'Menunggu Pembayaran', NOW())"
-    );
-    $stmt_order->bind_param("idss", $table_number, $total_price, $payment_method, $notes_string);
+    // Insert Order Utama
+    $stmt = $db->prepare("INSERT INTO orders (table_number, total_price, payment_method, notes, status, order_time) VALUES (?, ?, ?, ?, 'Menunggu Pembayaran', NOW())");
+    $stmt->bind_param("idss", $table_number, $total_price, $payment_method, $notes_string);
     
-    if (!$stmt_order->execute()) {
-        // Jika gagal, lempar error untuk memicu rollback
-        throw new Exception("Gagal menyimpan pesanan utama: " . $stmt_order->error);
+    if (!$stmt->execute()) {
+        throw new Exception("Database Error (Order): " . $stmt->error);
     }
-
-    // Ambil ID dari pesanan yang baru saja kita masukkan
     $order_id = $db->insert_id;
+    $stmt->close();
 
-    // 5. Masukkan setiap item di keranjang ke tabel 'order_items'
-    $stmt_item = $db->prepare(
-        "INSERT INTO order_items (order_id, variant_id, quantity, price_per_item) 
-         VALUES (?, ?, ?, ?)"
-    );
-
+    // Insert Item Pesanan
+    $stmt_item = $db->prepare("INSERT INTO order_items (order_id, variant_id, quantity, price_per_item) VALUES (?, ?, ?, ?)");
     foreach ($cart_data as $item) {
-        // Ambil data spesifik per item
-        $variant_id = (int)$item['variant_id']; // Ini WAJIB dikirim dari JavaScript
-        $quantity = (int)$item['quantity'];
-        $price_per_item = (float)$item['price'];
-
-        $stmt_item->bind_param("iiid", $order_id, $variant_id, $quantity, $price_per_item);
+        $stmt_item->bind_param("iiid", $order_id, $item['variant_id'], $item['quantity'], $item['price']);
         if (!$stmt_item->execute()) {
-            // Jika satu item gagal, lempar error untuk memicu rollback
-            throw new Exception("Gagal menyimpan item pesanan: " . $stmt_item->error);
+            throw new Exception("Database Error (Item): " . $stmt_item->error);
+        }
+    }
+    $stmt_item->close();
+
+    // 3. INTEGRASI MIDTRANS
+    $snapToken = null;
+    
+    if ($payment_method === 'QRIS') {
+        try {
+            // Panggil fungsi getSnapToken yang sudah diperbaiki
+            $snapToken = getSnapToken($order_id, $total_price);
+        } catch (Exception $midtransError) {
+            // Tangkap error asli Midtrans dan lempar ke catch utama
+            throw new Exception("Midtrans Gagal: " . $midtransError->getMessage());
         }
     }
 
-    // 6. Jika semua query (order utama dan semua item) berhasil, commit transaksi
+    // Commit Database jika semua lancar
     $db->commit();
-    
-    // Kirim respons sukses kembali ke JavaScript
+
+    // Kirim JSON Sukses
     echo json_encode([
-        'status' => 'success', 
+        'status' => 'success',
         'message' => 'Pesanan berhasil dibuat.',
-        'order_id' => $order_id
+        'order_id' => $order_id,
+        'snap_token' => $snapToken
     ]);
 
 } catch (Exception $e) {
-    // 7. Jika terjadi error di salah satu langkah, batalkan semua perubahan
-    $db->rollback();
+    // Rollback jika ada error apa pun
+    if (isset($db)) { $db->rollback(); }
     
-    // Kirim respons error kembali ke JavaScript
+    // Kirim pesan error asli ke frontend
     echo json_encode([
         'status' => 'error', 
         'message' => $e->getMessage()
     ]);
 }
-
-// Selalu tutup koneksi
-$db->close();
 ?>

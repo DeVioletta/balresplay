@@ -9,8 +9,10 @@
     <link rel="stylesheet" href="css/pembayaran.css">
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
     <link href="https://fonts.googleapis.com/css2?family=Cormorant+Garamond:wght@300;400;600;700&family=Montserrat:wght@300;400;500&display=swap" rel="stylesheet">
+    
+    <script src="https://app.sandbox.midtrans.com/snap/snap.js" data-client-key="CLIENT_KEY"></script>
+
     <style>
-        /* (BARU) Style untuk tombol yang dinonaktifkan */
         .btn-confirm-order:disabled {
             background-color: var(--tertiary-color);
             cursor: not-allowed;
@@ -63,8 +65,8 @@
                         <div class="payment-option-content">
                             <i class="fas fa-qrcode"></i>
                             <div class="payment-option-text">
-                                <strong>QRIS</strong>
-                                <span>Bayar dengan QR Code</span>
+                                <strong>QRIS / E-Wallet</strong>
+                                <span>Scan QR Code</span>
                             </div>
                         </div>
                     </label>
@@ -82,9 +84,11 @@
                 
                 <div class="payment-instructions">
                     <div id="qris-content" class="instruction-content active">
-                        <h4>Pembayaran QRIS</h4>
-                        <img src="https://placehold.co/250x250/f5f5f5/0f0f0f?text=QRIS+Dinamis" alt="QR Code" class="qris-image">
-                        <p>Silakan pindai kode QR di atas menggunakan aplikasi pembayaran favorit Anda.</p>
+                        <h4>Pembayaran Online</h4>
+                        <p style="text-align:center; padding: 20px;">
+                            <i class="fas fa-mobile-alt" style="font-size: 3rem; color: var(--primary-color); margin-bottom: 10px;"></i><br>
+                            Klik "Konfirmasi Pesanan" untuk memunculkan instruksi pembayaran (QRIS/Transfer/E-Wallet).
+                        </p>
                     </div>
                     <div id="cash-content" class="instruction-content">
                          <h4>Pembayaran Tunai</h4>
@@ -105,7 +109,7 @@
 
 <script>
 document.addEventListener('DOMContentLoaded', () => {
-    // (Logika Bagian 1 & 2 - Memuat keranjang & Opsi Pembayaran)
+    // --- SETUP AWAL (TIDAK BERUBAH) ---
     const cartData = JSON.parse(sessionStorage.getItem('cartData'));
     const totalPrice = sessionStorage.getItem('cartTotalPrice');
     const tableNumber = sessionStorage.getItem('tableNumber') || '1'; 
@@ -146,6 +150,7 @@ document.addEventListener('DOMContentLoaded', () => {
         document.getElementById('confirm-order-btn').disabled = true;
     }
     
+    // Toggle Tampilan Instruksi
     const paymentRadios = document.querySelectorAll('input[name="payment_method"]');
     const qrisContent = document.getElementById('qris-content');
     const cashContent = document.getElementById('cash-content');
@@ -161,7 +166,7 @@ document.addEventListener('DOMContentLoaded', () => {
         });
     });
 
-    // === LOGIKA KONFIRMASI PESANAN (DIUBAH) ===
+    // --- [INTEGRASI MIDTRANS 2] LOGIKA TOMBOL & POPUP ---
     const confirmOrderBtn = document.getElementById('confirm-order-btn');
 
     confirmOrderBtn.addEventListener('click', () => {
@@ -177,81 +182,118 @@ document.addEventListener('DOMContentLoaded', () => {
             const payload = {
                 cartData: currentCartData,
                 tableNumber: currentTableNumber,
+                // Pastikan nilai dikirim sesuai backend ('QRIS' atau 'Cash')
                 paymentMethod: selectedPaymentMethod === 'qris' ? 'QRIS' : 'Cash' 
             };
+
+            // ... kode sebelumnya (payload definition) ...
 
             fetch('actions/handle_order.php', {
                 method: 'POST',
                 headers: { 'Content-Type': 'application/json' },
                 body: JSON.stringify(payload)
             })
-            .then(response => response.json())
+            // [MODIFIKASI DEBUG] Ubah cara handle respon untuk cek error PHP
+            .then(response => {
+                return response.text().then(text => {
+                    try {
+                        return JSON.parse(text); // Coba ubah teks jadi JSON
+                    } catch (err) {
+                        // Jika gagal, berarti server mengirim Error HTML/Text
+                        console.error('Server Error:', text);
+                        throw new Error('Respon Server Bukan JSON:\n' + text.substring(0, 300)); // Ambil 300 huruf pertama error
+                    }
+                });
+            })
             .then(data => {
                 if (data.status === 'success') {
-                    const tableNumForRedirect = sessionStorage.getItem('tableNumber') || '1';
-                    
-                    // (DIUBAH) Logika ini sekarang MENAMBAHKAN ke array, bukan MENIMPA
-                    const orderStatusKey = `orderStatusData_MEJA_${tableNumForRedirect}`;
-                    
-                    // 1. Buat data untuk pesanan baru ini
-                    const temporaryOrderData = {
-                        order_id: data.order_id,
-                        status: 'Menunggu Pembayaran',
-                        items: currentCartData.map(item => ({
-                            product_name: item.name,
-                            variant: item.variant,
-                            quantity: parseInt(item.quantity),
-                            price_per_item: parseFloat(item.price), 
-                            subtotal: parseFloat(item.price) * parseInt(item.quantity), 
-                            notes: item.notes || '' // (Tambahkan catatan per item)
-                        })),
-                        total_price: grandTotal, 
-                        // (DIUBAH) Gabungkan catatan dari payload asli
-                        notes: payload.cartData.map(item => 
-                            item.notes ? `${item.name}: ${item.notes}` : ''
-                        ).filter(note => note).join('; ')
-                    };
-
-                    // 2. Ambil array pesanan yang sudah ada (jika ada)
-                    let existingOrders = JSON.parse(sessionStorage.getItem(orderStatusKey)) || [];
-                    if (!Array.isArray(existingOrders)) {
-                        existingOrders = []; // Pastikan itu array
+                    // [LOGIKA SUKSES]
+                    if (data.snap_token) {
+                        window.snap.pay(data.snap_token, {
+                            onSuccess: function(result){
+                                finalizeClientSideOrder(data.order_id, currentCartData, currentTableNumber, grandTotal, payload);
+                            },
+                            onPending: function(result){
+                                alert("Menunggu pembayaran.");
+                                finalizeClientSideOrder(data.order_id, currentCartData, currentTableNumber, grandTotal, payload);
+                            },
+                            onError: function(result){
+                                alert("Pembayaran gagal!");
+                                confirmOrderBtn.disabled = false;
+                                confirmOrderBtn.textContent = 'Konfirmasi Pesanan';
+                            },
+                            onClose: function(){
+                                alert('Anda menutup popup.');
+                                confirmOrderBtn.disabled = false;
+                                confirmOrderBtn.textContent = 'Konfirmasi Pesanan';
+                            }
+                        });
+                    } else {
+                        // Cash
+                        alert('Pesanan berhasil dibuat. Silakan menuju kasir.');
+                        finalizeClientSideOrder(data.order_id, currentCartData, currentTableNumber, grandTotal, payload);
                     }
 
-                    // 3. Tambahkan pesanan baru ke array
-                    existingOrders.push(temporaryOrderData);
-                    
-                    // 4. Simpan kembali array yang sudah diperbarui
-                    sessionStorage.setItem(orderStatusKey, JSON.stringify(existingOrders));
-                    
-                    sessionStorage.removeItem('cartData');
-                    sessionStorage.removeItem('cartTotalPrice');
-
-                    // Redirect dengan parameter sukses
-                    window.location.href = `menu.php?meja=${tableNumForRedirect}&order=success&id=${data.order_id}`;
-
                 } else {
-                    // Mengembalikan alert kegagalan konfirmasi
-                    alert('BalResplay: Gagal membuat pesanan: ' + data.message);
+                    // Error dari logika PHP (JSON valid tapi status error)
+                    alert('Gagal membuat pesanan: ' + data.message);
                     confirmOrderBtn.disabled = false;
                     confirmOrderBtn.textContent = 'Konfirmasi Pesanan';
                 }
             })
             .catch(error => {
                 console.error('Error:', error);
-                // Mengembalikan alert koneksi bermasalah
-                alert('BalResplay: Terjadi kesalahan koneksi. Silakan coba lagi.');
+                // Tampilkan error asli di Alert agar ketahuan penyebabnya
+                alert('TERJADI ERROR:\n' + error.message);
+                
                 confirmOrderBtn.disabled = false;
                 confirmOrderBtn.textContent = 'Konfirmasi Pesanan';
             });
         } else {
-            // Mengembalikan alert keranjang kosong
-            alert('BalResplay: Tidak ada item untuk dikonfirmasi.');
-            confirmOrderBtn.disabled = false;
-            confirmOrderBtn.textContent = 'Konfirmasi Pesanan';
+            alert('Tidak ada item untuk dikonfirmasi.');
             window.location.href = 'menu.php';
         }
     });
+
+    /**
+     * Fungsi Helper untuk menyimpan data ke SessionStorage (agar halaman Status bisa membacanya)
+     * dan melakukan Redirect ke halaman menu/sukses.
+     * Logika ini dipisahkan agar bisa dipanggil baik oleh Cash maupun Midtrans Success.
+     */
+    function finalizeClientSideOrder(orderId, cartData, tableNum, total, payload) {
+        const orderStatusKey = `orderStatusData_MEJA_${tableNum}`;
+        
+        // 1. Format data pesanan untuk tampilan frontend
+        const temporaryOrderData = {
+            order_id: orderId,
+            status: 'Menunggu Pembayaran', // Status awal frontend, nanti backend update otomatis
+            items: cartData.map(item => ({
+                product_name: item.name,
+                variant: item.variant,
+                quantity: parseInt(item.quantity),
+                price_per_item: parseFloat(item.price), 
+                subtotal: parseFloat(item.price) * parseInt(item.quantity), 
+                notes: item.notes || '' 
+            })),
+            total_price: total, 
+            notes: payload.cartData.map(item => 
+                item.notes ? `${item.name}: ${item.notes}` : ''
+            ).filter(note => note).join('; ')
+        };
+
+        // 2. Simpan ke array session
+        let existingOrders = JSON.parse(sessionStorage.getItem(orderStatusKey)) || [];
+        if (!Array.isArray(existingOrders)) { existingOrders = []; }
+        existingOrders.push(temporaryOrderData);
+        sessionStorage.setItem(orderStatusKey, JSON.stringify(existingOrders));
+        
+        // 3. Bersihkan keranjang
+        sessionStorage.removeItem('cartData');
+        sessionStorage.removeItem('cartTotalPrice');
+
+        // 4. Redirect
+        window.location.href = `menu.php?meja=${tableNum}&order=success&id=${orderId}`;
+    }
 });
 </script>
 
