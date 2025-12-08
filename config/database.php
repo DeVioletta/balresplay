@@ -83,8 +83,6 @@ function redirectIfNotLoggedIn($redirectUrl) {
 function getAdminUserByUsername($db, $username) {
     $stmt = $db->prepare("SELECT * FROM admin_users WHERE username = ? LIMIT 1");
     if (!$stmt) {
-        // Handle error, misalnya:
-        // error_log("Prepare statement failed: " . $db->error);
         return null;
     }
     $stmt->bind_param("s", $username);
@@ -105,8 +103,6 @@ function getAdminUserByUsername($db, $username) {
  * @return mysqli_result|false Hasil query
  */
 function getAllAdminUsers($db) {
-    // Ambil semua kecuali Super Admin, atau sesuaikan kebutuhan
-    // Di sini kita ambil semua
     $result = $db->query("SELECT user_id, username, role, status FROM admin_users");
     return $result;
 }
@@ -162,20 +158,18 @@ function deleteAdminUser($db, $user_id) {
 
 /**
  * Mengambil semua produk beserta variannya dari database.
- * (DIPERBARUI) Menambahkan 'is_available'.
+ * (SOFT DELETE SUPPORT) Hanya mengambil produk dan varian yang is_deleted = 0.
  *
  * @param mysqli $db Objek koneksi database
  * @return array Daftar produk, masing-masing dengan array 'variants'
  */
 function getAllProductsWithVariants($db) {
-    // [MODIFIKASI] Tambahkan filter WHERE p.is_deleted = 0
-    // [MODIFIKASI] Filter join varian AND pv.is_deleted = 0
+    // Tambahkan kondisi is_deleted = 0 untuk produk dan varian
     $sql = "SELECT p.*, pv.variant_id, pv.variant_name, pv.price, pv.is_available 
             FROM products p 
             LEFT JOIN product_variants pv ON p.product_id = pv.product_id AND pv.is_deleted = 0
             WHERE p.is_deleted = 0
             ORDER BY p.product_id, pv.variant_id";
-            
     $result = $db->query($sql);
     if (!$result) return [];
     
@@ -192,7 +186,7 @@ function getAllProductsWithVariants($db) {
                 'variants' => []
             ];
         }
-        if ($row['variant_id']) { 
+        if ($row['variant_id']) { // Hanya tambahkan varian jika ada (karena LEFT JOIN)
             $products[$product_id]['variants'][] = [
                 'variant_id' => $row['variant_id'],
                 'name' => $row['variant_name'],
@@ -206,13 +200,13 @@ function getAllProductsWithVariants($db) {
 
 /**
  * (FUNGSI BARU) Mengambil SATU produk dan variannya berdasarkan ID.
+ * (SOFT DELETE SUPPORT)
  *
  * @param mysqli $db
  * @param int $product_id
  * @return array|null Data produk tunggal atau null
  */
 function getProductById($db, $product_id) {
-    // [MODIFIKASI] Tambahkan AND is_deleted = 0
     $stmt = $db->prepare("SELECT * FROM products WHERE product_id = ? AND is_deleted = 0");
     $stmt->bind_param("i", $product_id);
     $stmt->execute();
@@ -223,7 +217,7 @@ function getProductById($db, $product_id) {
     $product = $result->fetch_assoc();
     $product['variants'] = [];
     
-    // [MODIFIKASI] Tambahkan AND is_deleted = 0 pada varian juga
+    // Ambil varian yang belum dihapus
     $stmt_var = $db->prepare("SELECT * FROM product_variants WHERE product_id = ? AND is_deleted = 0 ORDER BY variant_id");
     $stmt_var->bind_param("i", $product_id);
     $stmt_var->execute();
@@ -239,15 +233,15 @@ function getProductById($db, $product_id) {
 
 /**
  * (FUNGSI BARU) Mengambil semua kategori unik dari tabel products.
+ * (SOFT DELETE SUPPORT)
  *
  * @param mysqli $db
  * @return array Daftar kategori
  */
 function getAllCategories($db) {
-    $sql = "SELECT DISTINCT category FROM products ORDER BY category ASC";
+    $sql = "SELECT DISTINCT category FROM products WHERE is_deleted = 0 ORDER BY category ASC";
     $result = $db->query($sql);
     if (!$result) return [];
-    // Menggunakan fetch_all untuk mendapatkan semua baris sebagai array
     return $result->fetch_all(MYSQLI_ASSOC);
 }
 
@@ -291,7 +285,6 @@ function updateProduct($db, $product_id, $name, $description, $category, $image_
 
 /**
  * Menyimpan varian baru ke tabel 'product_variants'.
- * (DIPERBARUI) Menambahkan 'is_available'.
  *
  * @param mysqli $db
  * @param int $product_id
@@ -323,14 +316,15 @@ function updateProductVariant($db, $variant_id, $variant_name, $price, $is_avail
 }
 
 /**
- * (FUNGSI BARU) Menghapus produk. Kaskade di DB akan menghapus varian.
+ * (FUNGSI BARU) Menghapus produk.
+ * (SOFT DELETE IMPLEMENTATION) Update flag is_deleted = 1
  *
  * @param mysqli $db
  * @param int $product_id
  * @return bool True jika berhasil
  */
 function deleteProduct($db, $product_id) {
-    // 1. Soft Delete Produk Utama
+    // Ubah menjadi UPDATE is_deleted = 1
     $stmt = $db->prepare("UPDATE products SET is_deleted = 1 WHERE product_id = ?");
     $stmt->bind_param("i", $product_id);
     $success = $stmt->execute();
@@ -347,13 +341,14 @@ function deleteProduct($db, $product_id) {
 
 /**
  * (FUNGSI BARU) Mengambil semua ID varian untuk produk tertentu.
+ * (SOFT DELETE SUPPORT) Hanya ambil yang is_deleted = 0
  *
  * @param mysqli $db
  * @param int $product_id
  * @return array Daftar ID varian
  */
 function getVariantIdsForProduct($db, $product_id) {
-    $stmt = $db->prepare("SELECT variant_id FROM product_variants WHERE product_id = ?");
+    $stmt = $db->prepare("SELECT variant_id FROM product_variants WHERE product_id = ? AND is_deleted = 0");
     $stmt->bind_param("i", $product_id);
     $stmt->execute();
     $result = $stmt->get_result();
@@ -366,24 +361,18 @@ function getVariantIdsForProduct($db, $product_id) {
 
 /**
  * (FUNGSI BARU) Menghapus varian berdasarkan ID-nya.
+ * (SOFT DELETE IMPLEMENTATION) Update flag is_deleted = 1
  *
  * @param mysqli $db
  * @param int $variant_id
  * @return bool True jika berhasil
  */
 function deleteVariant($db, $variant_id) {
-    // [MODIFIKASI] Ganti DELETE dengan UPDATE
+    // Ubah menjadi UPDATE is_deleted = 1
     $stmt = $db->prepare("UPDATE product_variants SET is_deleted = 1 WHERE variant_id = ?");
     $stmt->bind_param("i", $variant_id);
     return $stmt->execute();
 }
-
-
-
-
-
-
-
 
 
 /* =========================================
@@ -450,6 +439,7 @@ function getDashboardStats($db, $start_date = null, $end_date = null) {
 
 /**
  * Mengambil 3 menu terlaris.
+ * Catatan: Tetap menampilkan menu yang sudah dihapus jika mereka pernah terjual (histori).
  *
  * @param mysqli $db Objek koneksi database
  * @param string|null $start_date
@@ -476,7 +466,7 @@ function getTopMenus($db, $start_date = null, $end_date = null) {
         $types = "s";
         $params[] = $end_date;
     } else {
-         $date_filter = ""; // Tidak ada join jika tidak ada filter
+         $date_filter = ""; 
     }
 
     $sql = "
@@ -506,7 +496,6 @@ function getTopMenus($db, $start_date = null, $end_date = null) {
  * @return array
  */
 function getDashboardOrderDetails($db, $start_date = null, $end_date = null) {
-    // [MODIFIKASI] Ubah filter dari != 'Dibatalkan' menjadi = 'Selesai'
     $date_filter = "WHERE o.status = 'Selesai'"; 
     $types = "";
     $params = [];
@@ -564,5 +553,4 @@ function updateVariantAvailability($db, $variant_id, $is_available) {
     $stmt->bind_param("ii", $is_available, $variant_id);
     return $stmt->execute();
 }
-
 ?>

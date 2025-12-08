@@ -15,12 +15,10 @@ $categories = getAllCategories($db); //
 
 $message = '';
 if (isset($_GET['success'])) {
-    // (DIUBAH) Tambahkan id="auto-hide-message"
     if ($_GET['success'] == 'updated') $message = '<div id="auto-hide-message" class="admin-message success">Menu berhasil diperbarui.</div>';
     if ($_GET['success'] == 'created') $message = '<div id="auto-hide-message" class="admin-message success">Menu baru berhasil dibuat.</div>';
 }
 if (isset($_GET['error'])) {
-    // (DIUBAH) Tambahkan id="auto-hide-message"
     if ($_GET['error'] == 'notfound') $message = '<div id="auto-hide-message" class="admin-message error">Produk tidak ditemukan.</div>';
 }
 ?>
@@ -60,9 +58,8 @@ if (isset($_GET['error'])) {
             color: var(--text-muted);
         }
         #menu-search-input {
-            /* Menggunakan style input global dari admin_menu.css */
             width: 100%;
-            padding: 12px 15px 12px 45px; /* Padding kiri untuk ikon */
+            padding: 12px 15px 12px 45px; 
             background-color: var(--secondary-color);
         }
         
@@ -71,8 +68,8 @@ if (isset($_GET['error'])) {
             color: var(--text-muted);
             text-align: center;
             padding: 20px;
-            grid-column: 1 / -1; /* Agar span di grid */
-            display: none; /* Sembunyi by default */
+            grid-column: 1 / -1; 
+            display: none; 
         }
     </style>
 </head>
@@ -216,6 +213,12 @@ if (isset($_GET['error'])) {
                                     <i class="fas fa-edit"></i> 
                                     <?php echo ($role == 'Dapur' ? 'Edit Stok' : 'Edit'); ?>
                                 </a>
+                                
+                                <?php if ($role == 'Super Admin' || $role == 'Kasir'): ?>
+                                    <button class="btn btn-delete btn-delete-menu" data-id="<?php echo $product['product_id']; ?>" data-name="<?php echo htmlspecialchars($product['name']); ?>">
+                                        <i class="fas fa-trash"></i> Hapus
+                                    </button>
+                                <?php endif; ?>
                             </div>
 
                         </div>
@@ -236,19 +239,17 @@ if (isset($_GET['error'])) {
             if (hamburger) hamburger.addEventListener('click', () => sidebar.classList.add('show'));
             if (overlay) overlay.addEventListener('click', () => sidebar.classList.remove('show'));
 
-            // --- (BARU) Logika Filter dan Search ---
+            // --- Logika Filter dan Search ---
             const categoryFilter = document.getElementById('category-filter');
             const searchInput = document.getElementById('menu-search-input');
             const menuGrid = document.querySelector('.admin-menu-grid');
             const allItems = document.querySelectorAll('.admin-menu-grid .menu-item');
 
-            // (BARU) Buat elemen pesan "Tidak ditemukan"
             let noResultsMessage = document.createElement('p');
             noResultsMessage.classList.add('no-search-results');
             noResultsMessage.textContent = 'Tidak ada menu yang cocok dengan pencarian Anda.';
             menuGrid.appendChild(noResultsMessage);
 
-            // (BARU) Fungsi filter terpusat yang menggabungkan search dan kategori
             function filterMenuItems() {
                 const selectedCategory = categoryFilter.value;
                 const searchTerm = searchInput.value.toLowerCase().trim();
@@ -258,7 +259,6 @@ if (isset($_GET['error'])) {
                     const itemCategory = item.dataset.category;
                     const itemName = item.dataset.name.toLowerCase();
 
-                    // Cek kedua kondisi
                     const categoryMatch = (selectedCategory === 'all' || itemCategory === selectedCategory);
                     const nameMatch = itemName.includes(searchTerm);
 
@@ -270,7 +270,6 @@ if (isset($_GET['error'])) {
                     }
                 });
 
-                // (BARU) Tampilkan/sembunyikan pesan "tidak ditemukan"
                 if (itemsFound === 0) {
                     noResultsMessage.style.display = 'block';
                 } else {
@@ -278,30 +277,49 @@ if (isset($_GET['error'])) {
                 }
             }
 
-            // (DIUBAH) Ganti logika filter kategori lama dengan fungsi baru
             if (categoryFilter) {
                 categoryFilter.addEventListener('change', filterMenuItems);
             }
 
-            // (BARU) Tambahkan event listener untuk search input
             if (searchInput) {
-                // 'input' event bereaksi langsung saat mengetik, paste, dll.
                 searchInput.addEventListener('input', filterMenuItems);
             }
-            // --- Akhir Logika Filter dan Search ---
-
-
-            // (PERBAIKAN POIN 1) Hapus JavaScript untuk .btn-delete
             
-            // (BARU) Logika untuk auto-hide message
+            // --- Logika Tombol Hapus (IMPLEMENTASI BARU) ---
+            document.querySelectorAll('.btn-delete-menu').forEach(button => {
+                button.addEventListener('click', function() {
+                    const productId = this.getAttribute('data-id');
+                    const productName = this.getAttribute('data-name');
+                    
+                    if (confirm(`Apakah Anda yakin ingin menghapus menu "${productName}"? Tindakan ini tidak dapat dibatalkan.`)) {
+                        fetch(`actions/delete_menu.php?id=${productId}`)
+                            .then(response => response.json())
+                            .then(data => {
+                                if (data.status === 'success') {
+                                    alert('Menu berhasil dihapus.');
+                                    // Hapus elemen dari DOM
+                                    this.closest('.menu-item').remove();
+                                } else {
+                                    alert('Gagal menghapus menu: ' + data.message);
+                                }
+                            })
+                            .catch(error => {
+                                console.error('Error:', error);
+                                alert('Terjadi kesalahan koneksi.');
+                            });
+                    }
+                });
+            });
+
+            // Logika untuk auto-hide message
             const messageElement = document.getElementById('auto-hide-message');
             if (messageElement) {
                 setTimeout(() => {
-                    messageElement.style.opacity = '0'; // Memicu transisi CSS
+                    messageElement.style.opacity = '0'; 
                     setTimeout(() => {
-                        messageElement.remove(); // Hapus setelah fade-out
-                    }, 500); // 0.5 detik (sesuai transisi CSS)
-                }, 4000); // Tampilkan pesan selama 4 detik
+                        messageElement.remove(); 
+                    }, 500); 
+                }, 4000); 
             }
         });
     </script>

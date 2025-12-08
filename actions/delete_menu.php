@@ -1,37 +1,34 @@
 <?php
-// FILE: balresplay/actions/delete_menu.php
-
+// Pastikan tidak ada output spasi/newline sebelum tag PHP ini
 require_once __DIR__ . '/../config/database.php';
 startSecureSession();
-redirectIfNotLoggedIn('../admin_login.php');
 
-// Cek Role
-if ($_SESSION['role'] == 'Dapur') {
-    header("Location: ../admin_menu.php");
+// Set header JSON agar browser tahu ini bukan HTML
+header('Content-Type: application/json');
+
+// Cek Login
+if (!isLoggedIn()) {
+    echo json_encode(['status' => 'error', 'message' => 'Anda harus login.']);
     exit();
 }
 
-$id = $_GET['id'] ?? null;
-$type = $_GET['type'] ?? null; // 'product' atau 'variant'
-
-if ($id && $type) {
-    if ($type === 'product') {
-        // Panggil fungsi Soft Delete Produk di database.php
-        if (deleteProduct($db, $id)) {
-            // Sukses
-        } else {
-            $_SESSION['error_message'] = "Gagal menghapus produk.";
-        }
-    } elseif ($type === 'variant') {
-        // Panggil fungsi Soft Delete Varian di database.php
-        if (deleteVariant($db, $id)) {
-            // Sukses
-        } else {
-            $_SESSION['error_message'] = "Gagal menghapus varian.";
-        }
-    }
+$role = $_SESSION['role'] ?? '';
+if ($role !== 'Kasir' && $role !== 'Super Admin') {
+    echo json_encode(['status' => 'error', 'message' => 'Akses ditolak.']);
+    exit();
 }
 
-header("Location: ../admin_menu.php");
+if (isset($_GET['id'])) {
+    $product_id = (int)$_GET['id'];
+
+    // Panggil fungsi Soft Delete
+    if (deleteProduct($db, $product_id)) {
+        echo json_encode(['status' => 'success', 'message' => 'Produk berhasil dihapus (soft delete).']);
+    } else {
+        echo json_encode(['status' => 'error', 'message' => 'Gagal menghapus produk.']);
+    }
+} else {
+    echo json_encode(['status' => 'error', 'message' => 'ID produk tidak ditemukan.']);
+}
 exit();
 ?>

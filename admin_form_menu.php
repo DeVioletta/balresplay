@@ -10,10 +10,8 @@ if ($role !== 'Kasir' && $role !== 'Super Admin' && $role !== 'Dapur') {
     exit();
 }
 
-// (PERBAIKAN POIN 2) Cek untuk Read-Only Dapur
 $is_dapur_readonly = ($_SESSION['role'] == 'Dapur');
 
-// --- (LOGIKA MODE EDIT) ---
 $is_edit_mode = isset($_GET['id']);
 $product_data = null;
 $variants_data = [];
@@ -57,7 +55,6 @@ if ($is_edit_mode) {
         .variant-availability label { margin: 0; color: var(--text-muted); font-size: 0.9rem; cursor: pointer; }
         .variant-availability input[type="checkbox"] { width: auto; cursor: pointer; }
         
-        /* (PERBAIKAN POIN 2) Style untuk input yang dinonaktifkan Dapur */
         input:disabled, textarea:disabled, select:disabled {
             background-color: var(--tertiary-color) !important;
             color: var(--text-muted) !important;
@@ -230,6 +227,12 @@ if ($is_edit_mode) {
                     </div>
 
                     <div class="form-actions">
+                        <?php if ($is_edit_mode && !$is_dapur_readonly): ?>
+                            <button type="button" class="btn btn-delete" id="btn-delete-product-form" style="margin-right: auto; background-color: var(--danger-color); color: white;">
+                                <i class="fas fa-trash"></i> Hapus Menu
+                            </button>
+                        <?php endif; ?>
+                        
                         <a href="admin_menu.php" class="btn btn-secondary">Batal</a>
                         <button type="submit" class="btn btn-primary">
                             <i class="fas fa-save"></i> Simpan
@@ -243,7 +246,6 @@ if ($is_edit_mode) {
     </div>
 
     <script>
-        // (PERBAIKAN POIN 3) Kirim status Dapur ke JS
         const isDapur = <?php echo json_encode($is_dapur_readonly); ?>;
 
         document.addEventListener('DOMContentLoaded', () => {
@@ -261,7 +263,6 @@ if ($is_edit_mode) {
                 const newRow = document.createElement('div');
                 newRow.classList.add('variant-row');
                 
-                // (PERBAIKAN POIN 3) Tambahkan 'disabled' jika Dapur
                 newRow.innerHTML = `
                     <input type="text" name="variants[${variantIndex}][name]" placeholder="Nama Varian" ${isDapur ? 'disabled' : ''}>
                     <input type="number" name="variants[${variantIndex}][price]" placeholder="Harga" required ${isDapur ? 'disabled' : ''}>
@@ -304,13 +305,12 @@ if ($is_edit_mode) {
                 }
             });
 
-            // (PERBAIKAN POIN 3) Validasi Form
+            // Validasi Form
             const menuForm = document.getElementById('menu-form');
             const errorMessage = document.getElementById('form-error-message');
             menuForm.addEventListener('submit', (e) => {
-                // Jika Dapur, skip validasi frontend (karena input di-disabled)
                 if (isDapur) {
-                    return; // Langsung submit
+                    return; 
                 }
                 
                 e.preventDefault(); 
@@ -342,6 +342,17 @@ if ($is_edit_mode) {
                     menuForm.submit();
                 }
             });
+
+            // (BARU) Logika Hapus Menu dari Form
+            const btnDeleteForm = document.getElementById('btn-delete-product-form');
+            if (btnDeleteForm) {
+                btnDeleteForm.addEventListener('click', () => {
+                    if (confirm('Apakah Anda yakin ingin menghapus menu ini?')) {
+                        // Redirect ke action delete
+                        window.location.href = 'actions/delete_menu.php?id=<?php echo $product_id ?? ""; ?>'; 
+                    }
+                });
+            }
         });
     </script>
 </body>
