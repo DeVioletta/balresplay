@@ -33,6 +33,19 @@ if ($is_edit_mode) {
         exit();
     }
 }
+
+// [PERBAIKAN LOGIKA] Tentukan tipe produk untuk keperluan UI
+// Jika varian kosong ATAU hanya ada 1 varian dan namanya kosong/null -> Simple (Satuan)
+// Selain itu -> Variable (Varian)
+$product_type = 'simple'; // Default
+if (!empty($variants_data)) {
+    if (count($variants_data) > 1) {
+        $product_type = 'variable';
+    } elseif (count($variants_data) == 1 && !empty($variants_data[0]['variant_name'])) {
+        // Cek variant_name dari database (sesuai field di getProductById -> variants[])
+        $product_type = 'variable';
+    }
+}
 ?>
 <!DOCTYPE html>
 <html lang="id">
@@ -62,8 +75,15 @@ if ($is_edit_mode) {
             opacity: 0.7;
         }
         
+        /* [PERBAIKAN CSS] Helper class untuk mode Simple (Satuan) */
+        /* Menyembunyikan input nama varian dan tombol hapus agar tampilan bersih */
+        .mode-simple .variant-name-input { display: none; }
+        .mode-simple .btn-delete-variant { visibility: hidden; } 
+        .mode-simple .variant-row { grid-template-columns: 1fr 100px auto; } /* Ubah grid agar input harga melebar */
+        
         @media (max-width: 768px) {
             #variants-container .variant-row { grid-template-columns: 1fr; }
+            .mode-simple .variant-row { grid-template-columns: 1fr; } /* Tetap stack di mobile */
             .variant-availability { justify-content: flex-start; }
         }
     </style>
@@ -182,14 +202,37 @@ if ($is_edit_mode) {
 
                     <div class="form-section">
                         <h4>Harga & Varian <?php if ($is_dapur_readonly) echo '(Hanya bisa ubah ketersediaan)'; ?></h4>
+                        
+                        <!-- [PERBAIKAN UI] Radio Button Tipe Menu -->
+                        <div class="form-group" style="margin-bottom: 25px;">
+                            <label style="margin-bottom: 10px; display: block;">Tipe Menu:</label>
+                            <div style="display: flex; gap: 20px; flex-wrap: wrap;">
+                                <label style="font-weight: normal; cursor: pointer; display: flex; align-items: center; gap: 8px;">
+                                    <input type="radio" name="ui_product_type" value="simple" 
+                                           <?php echo ($product_type == 'simple') ? 'checked' : ''; ?> 
+                                           <?php if ($is_dapur_readonly) echo 'disabled'; ?>> 
+                                    Satuan (Harga Tunggal)
+                                </label>
+                                <label style="font-weight: normal; cursor: pointer; display: flex; align-items: center; gap: 8px;">
+                                    <input type="radio" name="ui_product_type" value="variable" 
+                                           <?php echo ($product_type == 'variable') ? 'checked' : ''; ?> 
+                                           <?php if ($is_dapur_readonly) echo 'disabled'; ?>> 
+                                    Memiliki Varian (cth: Hot/Ice, Ukuran)
+                                </label>
+                            </div>
+                        </div>
+
                         <p class="form-hint">
                             Atur ketersediaan (stok) menggunakan checkbox "Tersedia".
                         </p>
-                        <div id="variants-container">
+                        
+                        <!-- Tambahkan ID dan Class dinamis -->
+                        <div id="variants-container" class="<?php echo ($product_type == 'simple') ? 'mode-simple' : ''; ?>">
                             
                             <?php if (empty($variants_data)): ?>
+                                <!-- Baris Default (Input nama diberi class 'variant-name-input') -->
                                 <div class="variant-row">
-                                    <input type="text" name="variants[0][name]" placeholder="Nama Varian (cth: Hot / Ice)" <?php if ($is_dapur_readonly) echo 'disabled'; ?>>
+                                    <input type="text" name="variants[0][name]" class="variant-name-input" placeholder="Nama Varian (cth: Hot / Ice)" <?php if ($is_dapur_readonly) echo 'disabled'; ?>>
                                     <input type="number" name="variants[0][price]" placeholder="Harga (cth: 20000)" required <?php if ($is_dapur_readonly) echo 'disabled'; ?>>
                                     <div class="variant-availability">
                                         <input type="checkbox" id="available-0" name="variants[0][is_available]" value="1" checked>
@@ -203,8 +246,9 @@ if ($is_edit_mode) {
                                 <?php foreach ($variants_data as $index => $variant): ?>
                                     <div class="variant-row">
                                         <input type="hidden" name="variants[<?php echo $index; ?>][id]" value="<?php echo $variant['variant_id']; ?>">
-                                        <input type="text" name="variants[<?php echo $index; ?>][name]" placeholder="Nama Varian" 
-                                               value="<?php echo htmlspecialchars($variant['name'] ?? ''); ?>" <?php if ($is_dapur_readonly) echo 'disabled'; ?>>
+                                        <!-- Input nama diberi class 'variant-name-input' dan menggunakan key 'variant_name' dari DB -->
+                                        <input type="text" name="variants[<?php echo $index; ?>][name]" class="variant-name-input" placeholder="Nama Varian" 
+                                               value="<?php echo htmlspecialchars($variant['variant_name'] ?? ''); ?>" <?php if ($is_dapur_readonly) echo 'disabled'; ?>>
                                         <input type="number" name="variants[<?php echo $index; ?>][price]" placeholder="Harga" required 
                                                value="<?php echo htmlspecialchars($variant['price'] ?? ''); ?>" <?php if ($is_dapur_readonly) echo 'disabled'; ?>>
                                         
@@ -221,7 +265,11 @@ if ($is_edit_mode) {
                             <?php endif; ?>
                             
                         </div>
-                        <button type="button" id="add-variant-btn" class="btn btn-secondary" <?php if ($is_dapur_readonly) echo 'disabled'; ?>>
+                        
+                        <!-- Tombol Tambah Varian (Akan disembunyikan via CSS jika mode-simple aktif) -->
+                        <button type="button" id="add-variant-btn" class="btn btn-secondary" 
+                                <?php if ($is_dapur_readonly) echo 'disabled'; ?>
+                                style="<?php echo ($product_type == 'simple') ? 'display: none;' : ''; ?>">
                             <i class="fas fa-plus"></i> Tambah Varian
                         </button>
                     </div>
@@ -257,14 +305,72 @@ if ($is_edit_mode) {
 
             const variantsContainer = document.getElementById('variants-container');
             const addVariantBtn = document.getElementById('add-variant-btn');
-            let variantIndex = <?php echo count($variants_data); ?>;
+            
+            // --- [PERBAIKAN LOGIKA JS] Switch Tipe Produk ---
+            const typeRadios = document.querySelectorAll('input[name="ui_product_type"]');
+            
+            typeRadios.forEach(radio => {
+                radio.addEventListener('change', (e) => {
+                    if (isDapur) return;
+
+                    if (e.target.value === 'simple') {
+                        // Jika pindah ke Satuan
+                        const rows = variantsContainer.querySelectorAll('.variant-row');
+                        const confirmMsg = "Mengubah ke tipe 'Satuan' akan menghapus semua varian tambahan. Lanjutkan?";
+                        
+                        if (rows.length > 1) {
+                            if (!confirm(confirmMsg)) {
+                                // Batalkan jika user menolak
+                                document.querySelector('input[value="variable"]').checked = true;
+                                return;
+                            }
+                        }
+
+                        // Hapus semua baris kecuali yang pertama
+                        while (variantsContainer.children.length > 1) {
+                            variantsContainer.lastChild.remove();
+                        }
+
+                        // Kosongkan nama varian baris pertama (agar dikirim NULL/kosong ke DB)
+                        const firstRowName = variantsContainer.querySelector('input[name*="[name]"]');
+                        if (firstRowName) firstRowName.value = '';
+
+                        // Tambah class untuk sembunyikan UI varian
+                        variantsContainer.classList.add('mode-simple');
+                        addVariantBtn.style.display = 'none';
+
+                    } else {
+                        // Jika pindah ke Varian
+                        variantsContainer.classList.remove('mode-simple');
+                        addVariantBtn.style.display = 'inline-flex';
+                    }
+                });
+            });
+
+            // --- Logic Tambah Varian ---
+            let variantIndex = <?php echo count($variants_data) > 0 ? count($variants_data) : 1; ?>;
 
             addVariantBtn.addEventListener('click', () => {
+                // Cari index tertinggi agar aman dari duplikat index array
+                let maxIndex = -1;
+                variantsContainer.querySelectorAll('.variant-row').forEach(row => {
+                   const inputName = row.querySelector('input[name^="variants"]');
+                   if(inputName) {
+                       const matches = inputName.name.match(/\[(\d+)\]/);
+                       if(matches && matches[1]) {
+                           const idx = parseInt(matches[1]);
+                           if(idx > maxIndex) maxIndex = idx;
+                       }
+                   }
+                });
+                variantIndex = maxIndex + 1;
+
                 const newRow = document.createElement('div');
                 newRow.classList.add('variant-row');
                 
+                // Pastikan input name punya class "variant-name-input"
                 newRow.innerHTML = `
-                    <input type="text" name="variants[${variantIndex}][name]" placeholder="Nama Varian" ${isDapur ? 'disabled' : ''}>
+                    <input type="text" name="variants[${variantIndex}][name]" class="variant-name-input" placeholder="Nama Varian (cth: Hot / Ice)" ${isDapur ? 'disabled' : ''}>
                     <input type="number" name="variants[${variantIndex}][price]" placeholder="Harga" required ${isDapur ? 'disabled' : ''}>
                     <div class="variant-availability">
                         <input type="checkbox" id="available-${variantIndex}" name="variants[${variantIndex}][is_available]" value="1" checked>
@@ -275,7 +381,6 @@ if ($is_edit_mode) {
                     </button>
                 `;
                 variantsContainer.appendChild(newRow);
-                variantIndex++;
             });
 
             variantsContainer.addEventListener('click', (e) => {
@@ -283,10 +388,16 @@ if ($is_edit_mode) {
                     if (variantsContainer.children.length > 1) {
                         e.target.closest('.variant-row').remove();
                     } else {
+                        // Jika baris terakhir, jangan hapus tapi reset
                         const lastRow = variantsContainer.querySelector('.variant-row');
-                        lastRow.querySelector('input[type="text"]').value = '';
-                        lastRow.querySelector('input[type="number"]').value = '';
+                        const nameInput = lastRow.querySelector('input[type="text"]');
+                        if(nameInput) nameInput.value = '';
+                        
+                        const priceInput = lastRow.querySelector('input[type="number"]');
+                        if(priceInput) priceInput.value = '';
+                        
                         lastRow.querySelector('input[type="checkbox"]').checked = true;
+                        alert("Minimal harus ada satu harga.");
                     }
                 }
             });
@@ -308,47 +419,60 @@ if ($is_edit_mode) {
             // Validasi Form
             const menuForm = document.getElementById('menu-form');
             const errorMessage = document.getElementById('form-error-message');
+            
             menuForm.addEventListener('submit', (e) => {
-                if (isDapur) {
-                    return; 
-                }
+                if (isDapur) { return; }
                 
-                e.preventDefault(); 
+                // Clear previous errors
                 errorMessage.style.display = 'none';
                 errorMessage.innerHTML = '';
                 let errors = [];
+
+                // Validasi field required
                 const requiredFields = menuForm.querySelectorAll('[required]');
                 requiredFields.forEach(field => {
+                    // Abaikan field yang sedang disembunyikan/disabled (misal di mode simple)
+                    if (field.disabled || field.offsetParent === null) return;
+
                     if (field.value.trim() === '') {
                         let fieldName = field.placeholder || field.name;
                         const labelElement = menuForm.querySelector(`label[for="${field.id}"]`);
                         if (labelElement) fieldName = labelElement.textContent;
+                        
                         if (fieldName.includes('Nama Menu')) errors.push('- Nama Menu wajib diisi.');
-                        else if (fieldName.includes('Harga')) errors.push('- Harga varian wajib diisi.');
+                        else if (fieldName.includes('Harga')) errors.push('- Harga wajib diisi.');
                         else if (!errors.includes(`- ${fieldName} wajib diisi.`)) errors.push(`- ${fieldName} wajib diisi.`);
                     }
                 });
-                errors = [...new Set(errors)];
+
+                // Validasi Kategori
                 const category = document.getElementById('product_category').value;
                 const newCategory = document.getElementById('new_category').value.trim();
                 if (category === '' && newCategory === '') {
                     errors.push('- Kategori wajib dipilih atau diisi.');
                 }
+
+                // Tampilkan Error jika ada
                 if (errors.length > 0) {
+                    e.preventDefault(); // Stop submit
                     errorMessage.innerHTML = '<strong>Validasi Gagal:</strong><br>' + errors.join('<br>');
                     errorMessage.style.display = 'block';
                     window.scrollTo({ top: 0, behavior: 'smooth' });
                 } else {
-                    menuForm.submit();
+                    // Jika mode simple, pastikan input nama varian dikosongkan sebelum submit
+                    // agar backend membacanya sebagai NULL
+                    const isSimpleMode = document.querySelector('input[name="ui_product_type"][value="simple"]').checked;
+                    if (isSimpleMode) {
+                        const variantNameInputs = variantsContainer.querySelectorAll('.variant-name-input');
+                        variantNameInputs.forEach(input => input.value = '');
+                    }
                 }
             });
 
-            // (BARU) Logika Hapus Menu dari Form
             const btnDeleteForm = document.getElementById('btn-delete-product-form');
             if (btnDeleteForm) {
                 btnDeleteForm.addEventListener('click', () => {
                     if (confirm('Apakah Anda yakin ingin menghapus menu ini?')) {
-                        // Redirect ke action delete
                         window.location.href = 'actions/delete_menu.php?id=<?php echo $product_id ?? ""; ?>'; 
                     }
                 });
