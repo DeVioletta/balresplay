@@ -73,80 +73,9 @@ $table_numbers = range(1, $table_count);
     <link href="https://fonts.googleapis.com/css2?family=Cormorant+Garamond:wght@300;400;600;700&family=Montserrat:wght@300;400;500&display=swap" rel="stylesheet">
     
     <!-- Ganti CLIENT_KEY dengan Client Key Midtrans Anda -->
-    <script src="https://app.sandbox.midtrans.com/snap/snap.js" data-client-key="SB-Mid-client-XXXXXXXXXXXXXXXX"></script>
+    <script src="https://app.sandbox.midtrans.com/snap/snap.js" data-client-key="CLIENT KEY"></script>
 
-    <style>
-        .item-image .badge-habis {
-            position: absolute; top: 10px; right: 10px; background-color: var(--danger-color);
-            color: var(--light-text); padding: 5px 12px; border-radius: 20px;
-            font-size: 12px; font-weight: 700; z-index: 2;
-        }
-        .btn-add.disabled { background-color: var(--tertiary-color); border-color: var(--tertiary-color); cursor: not-allowed; }
-        .cart-table-number select {
-            background-color: var(--secondary-color); color: var(--light-text);
-            border: 1px solid var(--tertiary-color); padding: 5px 8px;
-            border-radius: 5px; font-size: 1rem; font-family: "Montserrat", sans-serif;
-        }
-        .cart-table-number select:focus { outline: 1px solid var(--accent-color); }
-        
-        .status-item {
-            display: flex; justify-content: space-between; align-items: flex-start;
-            padding: 15px 0; border-bottom: 1px dashed var(--tertiary-color);
-        }
-        .status-item:last-child { border-bottom: none; }
-        .status-item-info { flex-grow: 1; }
-        .status-item-info h4 { margin: 0 0 5px 0; font-size: 1rem; color: var(--light-text); }
-        .status-item-info small { color: var(--text-muted); font-style: italic; }
-        .status-item-price { font-weight: 600; color: var(--accent-color); white-space: nowrap; margin-left: 15px; }
-        .status-header { text-align: center; margin-bottom: 20px; padding-bottom: 15px; border-bottom: 1px solid var(--tertiary-color); }
-        .status-header p { margin: 0; color: var(--text-muted); }
-        .status-header strong { display: block; margin-top: 5px; font-size: 1.2rem; color: var(--accent-color); }
-        .status-items { padding: 0 20px 20px 20px; }
-        
-        .status-order-instance {
-            margin-bottom: 15px;
-            border: 1px solid var(--tertiary-color);
-            border-radius: 8px;
-            overflow: hidden;
-        }
-        .status-order-instance:last-child {
-            margin-bottom: 0;
-        }
-
-        /* Style untuk Resume Payment Bar */
-        #resume-payment-bar {
-            display: none; 
-            position: fixed; 
-            top:40px; 
-            left: 0; 
-            width: 100%; 
-            background-color: #fff3cd; 
-            border-top: 2px solid #ffecb5; 
-            padding: 15px; 
-            box-shadow: 0 -2px 10px rgba(0,0,0,0.1); 
-            z-index: 9999; 
-            text-align: center;
-            animation: slideUp 0.5s ease-out;
-        }
-        @keyframes slideUp {
-            from { transform: translateY(100%); }
-            to { transform: translateY(0); }
-        }
-        #btn-resume-payment {
-            background-color: #0d6efd; 
-            color: white; 
-            border: none; 
-            padding: 8px 20px; 
-            border-radius: 5px; 
-            cursor: pointer; 
-            font-weight: bold;
-            margin-left: 10px;
-            font-family: 'Montserrat', sans-serif;
-        }
-        #btn-resume-payment:hover {
-            background-color: #0b5ed7;
-        }
-    </style>
+ 
 </head>
 <body>
 
