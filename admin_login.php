@@ -1,5 +1,5 @@
 <?php
-    // (DIUBAH) Tambahkan logika untuk error=2
+    // Logika error
     $error_message = '';
     if (isset($_GET['error'])) {
         if ($_GET['error'] == '1') {
@@ -20,7 +20,7 @@
     <title>Admin | Login</title>
     <!-- CSS Utama -->
     <link rel="stylesheet" href="css/variable.css">
-    <link rel="stylesheet" href="css/admin_login.css"> <!-- (FILE CSS BARU) -->
+    <link rel="stylesheet" href="css/admin_login.css">
     <!-- Font & Ikon -->
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
     <link href="https://fonts.googleapis.com/css2?family=Cormorant+Garamond:wght@300;400;600;700&family=Montserrat:wght@300;400;500&display=swap" rel="stylesheet">
@@ -62,24 +62,7 @@
 
     </div>
 
-    <script>
-        document.addEventListener('DOMContentLoaded', () => {
-            const togglePassword = document.getElementById('toggle-password');
-            const password = document.getElementById('password');
-
-            if (togglePassword) {
-                togglePassword.addEventListener('click', function () {
-                    // Ganti tipe input
-                    const type = password.getAttribute('type') === 'password' ? 'text' : 'password';
-                    password.setAttribute('type', type);
-                    
-                    // Ganti ikon
-                    this.classList.toggle('fa-eye');
-                    this.classList.toggle('fa-eye-slash');
-                });
-            }
-        });
-    </script>
+    <script src="js/admin_login.js"></script>
 
 </body>
 </html>
