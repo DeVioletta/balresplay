@@ -3,6 +3,30 @@
 require_once __DIR__ . '/config/database.php';
 startSecureSession();
 
+// --- [BARU] Logika Customer ID (Privasi & Keamanan) ---
+// Cek apakah user sudah punya customer_id di session
+if (!isset($_SESSION['customer_id'])) {
+    // Jika belum ada di session, cek apakah ada di cookie (untuk recover jika browser tertutup)
+    if (isset($_COOKIE['balresplay_cust_id'])) {
+        $_SESSION['customer_id'] = $_COOKIE['balresplay_cust_id'];
+    } else {
+        // Generate UUID v4 atau random token aman (32 karakter hex)
+        try {
+            $unique_id = bin2hex(random_bytes(16));
+        } catch (Exception $e) {
+            // Fallback jika random_bytes gagal (jarang terjadi)
+            $unique_id = md5(uniqid(rand(), true));
+        }
+        
+        $_SESSION['customer_id'] = $unique_id;
+        
+        // Simpan juga di cookie selama 24 jam agar aman jika tab tertutup
+        // Parameter: nama, nilai, expire, path, domain, secure (true jika HTTPS), httponly
+        setcookie('balresplay_cust_id', $unique_id, time() + 86400, "/", "", false, true); 
+    }
+}
+// -----------------------------------------------------
+
 // 2. Ambil semua data produk dari database
 $products_list = getAllProductsWithVariants($db); 
 
@@ -48,6 +72,7 @@ $table_numbers = range(1, $table_count);
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
     <link href="https://fonts.googleapis.com/css2?family=Cormorant+Garamond:wght@300;400;600;700&family=Montserrat:wght@300;400;500&display=swap" rel="stylesheet">
     
+    <!-- Ganti CLIENT_KEY dengan Client Key Midtrans Anda -->
     <script src="https://app.sandbox.midtrans.com/snap/snap.js" data-client-key="SB-Mid-client-XXXXXXXXXXXXXXXX"></script>
 
     <style>
@@ -88,7 +113,7 @@ $table_numbers = range(1, $table_count);
             margin-bottom: 0;
         }
 
-        /* [BARU] Style untuk Resume Payment Bar */
+        /* Style untuk Resume Payment Bar */
         #resume-payment-bar {
             display: none; 
             position: fixed; 
@@ -299,6 +324,7 @@ document.addEventListener('DOMContentLoaded', () => {
     let cart = [];
     let totalPrice = 0;
     
+    // --- [UPDATE] Logic Nomor Meja (Hanya untuk Pre-fill) ---
     const urlParams = new URLSearchParams(window.location.search);
     let currentTableNumber = urlParams.get('meja') || '1'; 
     
@@ -310,7 +336,7 @@ document.addEventListener('DOMContentLoaded', () => {
         sessionStorage.setItem('tableNumber', currentTableNumber);
         const newUrl = `${window.location.pathname}?meja=${currentTableNumber}`;
         window.history.pushState({path: newUrl}, '', newUrl);
-        checkOrderStatus(); 
+        // Note: Tidak perlu checkOrderStatus() ulang karena status sekarang berbasis session, bukan meja
     });
 
     const openModal = () => cartModal.classList.add('show');
@@ -475,12 +501,15 @@ document.addEventListener('DOMContentLoaded', () => {
         if (e.target === orderStatusModal) closeStatusModal();
     });
     
+    // --- [UPDATE] Key Storage Baru untuk Privasi ---
+    const orderStatusKey = 'balresplay_my_orders'; 
+
     window.updateOrderStatusView = function() {
-        let orderStatusKey = `orderStatusData_MEJA_${currentTableNumber}`;
+        // Ambil data dari key baru yang unik per user
         let currentOrdersArray = JSON.parse(sessionStorage.getItem(orderStatusKey));
         
         if (!currentOrdersArray || !Array.isArray(currentOrdersArray) || currentOrdersArray.length === 0) {
-            orderStatusDetailsContainer.innerHTML = `<div class="cart-empty-message"><p>Tidak ada pesanan aktif untuk meja ini.</p></div>`;
+            orderStatusDetailsContainer.innerHTML = `<div class="cart-empty-message"><p>Tidak ada pesanan aktif.</p></div>`;
             return;
         }
         
@@ -510,7 +539,7 @@ document.addEventListener('DOMContentLoaded', () => {
             combinedHTML += `
                 <div class="status-order-instance">
                     <div class="status-header">
-                        <p style="font-size: 1rem;">Pesanan #${currentOrderData.order_id} (Meja ${currentTableNumber})</p>
+                        <p style="font-size: 1rem;">Pesanan #${currentOrderData.order_id} (Meja ${currentOrderData.table_number})</p>
                         <strong>${htmlspecialchars(currentOrderData.status)}</strong>
                     </div>
                     <div class="status-items">
@@ -530,13 +559,15 @@ document.addEventListener('DOMContentLoaded', () => {
         
         const poll = () => {
             const cacheBuster = `&_=${new Date().getTime()}`;
-            fetch(`actions/get_order_status.php?meja=${currentTableNumber}${cacheBuster}`) 
+            
+            // --- [UPDATE] Fetch tanpa parameter meja (Keamanan) ---
+            fetch(`actions/get_order_status.php?${cacheBuster}`) 
                 .then(response => response.json())
                 .then(data => {
-                    let orderStatusKey = `orderStatusData_MEJA_${currentTableNumber}`;
                     
                     if (data.status === 'found' && data.orders && data.orders.length > 0) { 
                         orderStatusIcon.style.display = 'flex';
+                        // Simpan ke key storage baru
                         sessionStorage.setItem(orderStatusKey, JSON.stringify(data.orders)); 
                         if (orderStatusModal.classList.contains('show')) {
                             updateOrderStatusView();
@@ -559,26 +590,22 @@ document.addEventListener('DOMContentLoaded', () => {
     updateCart();
     checkOrderStatus(); 
 
-    // === [LOGIKA BARU] RESUME PAYMENT DENGAN VALIDASI ===
+    // === RESUME PAYMENT DENGAN VALIDASI ===
     const pendingToken = sessionStorage.getItem('pending_snap_token');
     const pendingOrderId = sessionStorage.getItem('pending_order_id');
     const resumeBar = document.getElementById('resume-payment-bar');
     const resumeOrderIdSpan = document.getElementById('resume-order-id');
     const btnResume = document.getElementById('btn-resume-payment');
 
-    // Cek apakah ada data di storage
     if (pendingToken && pendingOrderId) {
         
-        // [PERBAIKAN] Validasi ke server dulu sebelum memunculkan tombol
         fetch(`actions/validate_pending_order.php?order_id=${pendingOrderId}`)
             .then(response => response.json())
             .then(data => {
                 if (data.valid) {
-                    // JIKA VALID (Masih ada di DB & Menunggu Pembayaran): Tampilkan Bar
                     resumeOrderIdSpan.textContent = pendingOrderId;
                     resumeBar.style.display = 'block'; 
                 } else {
-                    // JIKA TIDAK VALID (Sudah Lunas / Expired / Dihapus): Bersihkan Storage
                     console.log("Pending order invalid/expired. Clearing session.");
                     sessionStorage.removeItem('pending_snap_token');
                     sessionStorage.removeItem('pending_order_id');
@@ -587,15 +614,12 @@ document.addEventListener('DOMContentLoaded', () => {
             })
             .catch(err => {
                 console.error("Gagal memvalidasi order pending:", err);
-                // Opsional: Sembunyikan jika error koneksi agar tidak membingungkan
                 resumeBar.style.display = 'none';
             });
     }
 
-    // Aksi Tombol Bayar Sekarang
     if (btnResume) {
         btnResume.addEventListener('click', () => {
-            // Cek ulang token saat tombol diklik (double check)
             const currentToken = sessionStorage.getItem('pending_snap_token');
             
             if (typeof window.snap !== 'undefined' && currentToken) {
@@ -612,7 +636,6 @@ document.addEventListener('DOMContentLoaded', () => {
                         window.location.reload();
                     },
                     onError: function(result){
-                        // Jika Midtrans bilang token expired saat diklik
                         alert("Maaf, sesi pembayaran telah berakhir atau dibatalkan.");
                         sessionStorage.removeItem('pending_snap_token');
                         sessionStorage.removeItem('pending_order_id');

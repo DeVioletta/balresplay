@@ -20,6 +20,13 @@ try {
         throw new Exception("Data pesanan tidak lengkap.");
     }
 
+    // --- [BARU] Validasi Customer ID ---
+    $customer_id = $_SESSION['customer_id'] ?? '';
+    if (empty($customer_id)) {
+        throw new Exception("Sesi Anda telah berakhir. Silakan refresh halaman menu.");
+    }
+    // -----------------------------------
+
     $cart_data = $data['cartData'];
     $table_number = (int)$data['tableNumber'];
     $payment_method = $data['paymentMethod']; 
@@ -39,9 +46,11 @@ try {
     }
     $notes_string = implode("; ", $notes_arr);
 
-    // Insert Order Utama
-    $stmt = $db->prepare("INSERT INTO orders (table_number, total_price, payment_method, notes, status, order_time) VALUES (?, ?, ?, ?, 'Menunggu Pembayaran', NOW())");
-    $stmt->bind_param("idss", $table_number, $total_price, $payment_method, $notes_string);
+    // --- [UPDATE] Insert Order dengan customer_id ---
+    $stmt = $db->prepare("INSERT INTO orders (customer_id, table_number, total_price, payment_method, notes, status, order_time) VALUES (?, ?, ?, ?, ?, 'Menunggu Pembayaran', NOW())");
+    
+    // Bind params: s (string customer_id), i (int table), d (decimal total), s (string method), s (string notes)
+    $stmt->bind_param("sidss", $customer_id, $table_number, $total_price, $payment_method, $notes_string);
     
     if (!$stmt->execute()) {
         throw new Exception("Database Error (Order): " . $stmt->error);
@@ -64,10 +73,8 @@ try {
     
     if ($payment_method === 'QRIS') {
         try {
-            // Panggil fungsi getSnapToken yang sudah diperbaiki
             $snapToken = getSnapToken($order_id, $total_price);
         } catch (Exception $midtransError) {
-            // Tangkap error asli Midtrans dan lempar ke catch utama
             throw new Exception("Midtrans Gagal: " . $midtransError->getMessage());
         }
     }

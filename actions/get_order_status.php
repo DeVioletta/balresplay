@@ -3,38 +3,39 @@ require_once __DIR__ . '/../config/database.php';
 startSecureSession();
 header('Content-Type: application/json');
 
-if (!isset($_GET['meja'])) {
-    echo json_encode(['status' => 'error', 'message' => 'Nomor meja tidak disediakan.']);
+// --- [UPDATE] Validasi Customer ID ---
+// Kita tidak lagi mengecek $_GET['meja'] untuk query, demi keamanan
+if (!isset($_SESSION['customer_id'])) {
+    // Jika tidak ada sesi ID, berarti user belum pernah buka menu.php atau sesi habis
+    echo json_encode(['status' => 'empty', 'message' => 'No session ID']);
     exit;
 }
-$table_number = (int)$_GET['meja'];
 
-// 1. (DIUBAH) Ambil SEMUA pesanan aktif untuk meja ini (LIMIT 1 dihapus)
-// (DIUBAH) Urutkan dari yang PALING LAMA (ASC) agar antrian benar
+$customer_id = $_SESSION['customer_id'];
+
+// 1. Ambil SEMUA pesanan aktif milik customer_id ini
 $sql_order = "
-    SELECT order_id, status, notes, order_time, total_price
+    SELECT order_id, status, notes, order_time, total_price, table_number
     FROM orders 
-    WHERE table_number = ? 
+    WHERE customer_id = ? 
       AND status NOT IN ('Selesai', 'Dibatalkan')
     ORDER BY order_time ASC
 ";
 $stmt = $db->prepare($sql_order);
-$stmt->bind_param("i", $table_number);
+$stmt->bind_param("s", $customer_id);
 $stmt->execute();
 $result = $stmt->get_result();
 
 if ($result->num_rows == 0) {
-    // (DIUBAH) Kembalikan array kosong agar konsisten
     echo json_encode(['status' => 'empty', 'orders' => []]);
     exit;
 }
 
-// (DIUBAH) Siapkan array untuk menampung semua pesanan
 $all_orders = [];
 $orders_data = $result->fetch_all(MYSQLI_ASSOC);
 $stmt->close();
 
-// 2. (DIUBAH) Siapkan query item SATU KALI
+// 2. Siapkan query item
 $sql_items = "
     SELECT 
         oi.quantity,
@@ -49,7 +50,7 @@ $sql_items = "
 ";
 $stmt_items = $db->prepare($sql_items);
 
-// 3. (DIUBAH) Loop untuk setiap pesanan dan ambil item-nya
+// 3. Loop untuk setiap pesanan dan ambil item-nya
 foreach ($orders_data as $order) {
     $order_id = $order['order_id'];
     
@@ -58,21 +59,19 @@ foreach ($orders_data as $order) {
     $items_result = $stmt_items->get_result();
     $items = $items_result->fetch_all(MYSQLI_ASSOC);
 
-    // Buat objek respons untuk pesanan ini
     $response_order = [
         'order_id' => (int)$order_id,
+        'table_number' => (int)$order['table_number'], // Kirim info meja juga untuk verifikasi visual
         'status' => $order['status'],
         'orderTime' => strtotime($order['order_time']) * 1000,
-        'notes' => $order['notes'], // Menggunakan catatan utama yang sudah digabung
+        'notes' => $order['notes'],
         'total_price' => (float)$order['total_price'],
         'items' => $items
     ];
     
-    // Tambahkan ke array utama
     $all_orders[] = $response_order;
 }
 
-// 4. Kirim respons (berisi array 'orders')
 echo json_encode(['status' => 'found', 'orders' => $all_orders]);
 
 $stmt_items->close();
