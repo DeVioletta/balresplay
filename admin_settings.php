@@ -52,36 +52,7 @@ if (isset($_GET['success'])) {
     <link rel="stylesheet" href="css/variable.css">
     <link rel="stylesheet" href="css/admin_menu.css"> <link rel="stylesheet" href="css/admin_settings.css"> <link rel="stylesheet" href="css/menu_form.css"> <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
     <link href="https://fonts.googleapis.com/css2?family=Cormorant+Garamond:wght@300;400;600;700&family=Montserrat:wght@300;400;500&display=swap" rel="stylesheet">
-    <style>
-        .admin-message { padding: 15px; border-radius: 5px; margin-bottom: 20px; font-weight: 500; }
-        .admin-message.success { background-color: var(--success-color); color: var(--light-text); }
-        .admin-message.error { background-color: var(--danger-color); color: var(--light-text); }
-        .switch { position: relative; display: inline-block; width: 50px; height: 28px; }
-        .switch input { opacity: 0; width: 0; height: 0; }
-        .slider { position: absolute; cursor: pointer; top: 0; left: 0; right: 0; bottom: 0; background-color: var(--tertiary-color); transition: .4s; }
-        .slider:before { position: absolute; content: ""; height: 20px; width: 20px; left: 4px; bottom: 4px; background-color: white; transition: .4s; }
-        input:checked + .slider { background-color: var(--success-color); }
-        input:checked + .slider:before { transform: translateX(22px); }
-        .slider.round { border-radius: 34px; }
-        .slider.round:before { border-radius: 50%; }
-        .form-group-toggle { display: flex; align-items: center; justify-content: space-between; margin-top: 15px; }
-        
-        .settings-card {
-            background-color: var(--darker-bg);
-            border: 1px solid var(--tertiary-color);
-            border-radius: 10px;
-            margin-bottom: 30px;
-        }
-        .settings-card h4 {
-            font-size: 1.5rem;
-            margin: 0;
-            padding: 24px 30px;
-            border-bottom: 1px solid var(--tertiary-color);
-        }
-        .settings-card form {
-            padding: 24px 30px;
-        }
-    </style>
+
 </head>
 <body>
     
