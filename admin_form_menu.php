@@ -64,36 +64,6 @@ if (!empty($variants_data)) {
     <link rel="stylesheet" href="css/variable.css">
     <link rel="stylesheet" href="css/admin_menu.css"> <link rel="stylesheet" href="css/menu_form.css"> <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
     <link href="https://fonts.googleapis.com/css2?family=Cormorant+Garamond:wght@300;400;600;700&family=Montserrat:wght@300;400;500&display=swap" rel="stylesheet">
-    
-    <style>
-        .admin-message { padding: 15px; border-radius: 5px; margin-bottom: 20px; font-weight: 500; }
-        .admin-message.error { background-color: var(--danger-color); color: var(--light-text); }
-        #variants-container .variant-row { grid-template-columns: 1fr 1fr 100px auto; gap: 15px; }
-        .variant-availability {
-            display: flex; align-items: center; justify-content: center; gap: 8px;
-            padding: 10px; background-color: var(--dark-bg); border-radius: 5px;
-        }
-        .variant-availability label { margin: 0; color: var(--text-muted); font-size: 0.9rem; cursor: pointer; }
-        .variant-availability input[type="checkbox"] { width: auto; cursor: pointer; }
-        
-        input:disabled, textarea:disabled, select:disabled {
-            background-color: var(--tertiary-color) !important;
-            color: var(--text-muted) !important;
-            cursor: not-allowed;
-            opacity: 0.7;
-        }
-        
-        /* Helper class untuk mode Simple (Satuan) */
-        .mode-simple .variant-name-input { display: none; }
-        .mode-simple .btn-delete-variant { visibility: hidden; } 
-        .mode-simple .variant-row { grid-template-columns: 1fr 100px auto; } 
-        
-        @media (max-width: 768px) {
-            #variants-container .variant-row { grid-template-columns: 1fr; }
-            .mode-simple .variant-row { grid-template-columns: 1fr; }
-            .variant-availability { justify-content: flex-start; }
-        }
-    </style>
 </head>
 <body>
     

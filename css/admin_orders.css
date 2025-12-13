@@ -23,7 +23,8 @@
     box-shadow: 0 5px 15px rgba(0, 0, 0, 0.2);
     display: flex;
     flex-direction: column;
-    border-left: 5px solid var(--tertiary-color); /* Default border color */
+    border-left: 5px solid var(--tertiary-color);
+    /* Default border color */
     transition: var(--transition);
 }
 
@@ -32,7 +33,8 @@
     justify-content: space-between;
     align-items: center;
     padding: 15px 20px;
-    background-color: rgba(0,0,0,0.1); /* Sedikit lebih gelap */
+    background-color: rgba(0, 0, 0, 0.1);
+    /* Sedikit lebih gelap */
     border-bottom: 1px solid var(--tertiary-color);
 }
 
@@ -46,10 +48,12 @@
     font-size: 0.9rem;
     /* color: var(--text-muted); */
 }
+
 .order-card-header span strong {
     color: var(--accent-color);
     font-size: 1.1rem;
 }
+
 .order-time {
     font-style: italic;
     white-space: nowrap;
@@ -66,21 +70,26 @@
     padding: 0;
     border: none;
 }
+
 .order-card-body .summary-product-item {
     align-items: flex-start;
     padding: 10px 0;
     border-bottom: 1px dashed var(--tertiary-color);
 }
+
 .order-card-body .summary-product-item:last-child {
     border-bottom: none;
 }
+
 .order-card-body .product-name {
     font-size: 1rem;
     font-weight: 500;
 }
+
 .order-card-body .product-notes {
     font-size: 0.85rem;
 }
+
 .order-card-body .product-price {
     font-size: 0.95rem;
     white-space: nowrap;
@@ -88,15 +97,17 @@
 
 
 .order-card-footer {
-    margin-top: auto; /* Mendorong footer ke bawah */
+    margin-top: auto;
+    /* Mendorong footer ke bawah */
     padding: 15px 20px;
-    background-color: rgba(0,0,0,0.1);
+    background-color: rgba(0, 0, 0, 0.1);
 }
 
 .order-card-status {
     margin-top: 15px;
     text-align: center;
 }
+
 .status-badge {
     display: inline-block;
     padding: 6px 15px;
@@ -115,10 +126,12 @@
     justify-content: space-between;
     align-items: center;
 }
+
 .order-card-actions label {
     margin-bottom: 0;
     font-size: 0.9rem;
 }
+
 .status-select {
     width: 60%;
     padding: 8px 10px;
@@ -130,30 +143,37 @@
 [data-status="Menunggu Pembayaran"] {
     border-left-color: var(--accent-color);
 }
+
 [data-status="Menunggu Pembayaran"] .status-badge {
     background-color: var(--accent-color);
     color: var(--dark-bg);
 }
 
 [data-status="Kirim ke Dapur"] {
-    border-left-color: #007bff; /* Biru */
+    border-left-color: #007bff;
+    /* Biru */
 }
+
 [data-status="Kirim ke Dapur"] .status-badge {
     background-color: #007bff;
     color: var(--light-text);
 }
 
 [data-status="Sedang Dimasak"] {
-    border-left-color: #fd7e14; /* Orange */
+    border-left-color: #fd7e14;
+    /* Orange */
 }
+
 [data-status="Sedang Dimasak"] .status-badge {
     background-color: #fd7e14;
     color: var(--light-text);
 }
 
 [data-status="Siap Diantar"] {
-    border-left-color: #20c997; /* Teal */
+    border-left-color: #20c997;
+    /* Teal */
 }
+
 [data-status="Siap Diantar"] .status-badge {
     background-color: #20c997;
     color: var(--light-text);
@@ -162,10 +182,12 @@
 [data-status="Selesai"] {
     border-left-color: var(--success-color);
 }
+
 [data-status="Selesai"] .status-badge {
     background-color: var(--success-color);
     color: var(--light-text);
 }
+
 /* Sembunyikan aksi jika sudah selesai */
 [data-status="Selesai"] .order-card-actions {
     display: none;
@@ -174,10 +196,12 @@
 [data-status="Dibatalkan"] {
     border-left-color: var(--danger-color);
 }
+
 [data-status="Dibatalkan"] .status-badge {
     background-color: var(--danger-color);
     color: var(--light-text);
 }
+
 /* Sembunyikan aksi jika sudah dibatalkan */
 [data-status="Dibatalkan"] .order-card-actions {
     display: none;
@@ -186,6 +210,7 @@
 
 /* --- Responsive Design --- */
 @media (max-width: 992px) {
+
     /* (DIUBAH) Di layar tablet, buat 2 kolom */
     .order-grid {
         grid-template-columns: repeat(auto-fill, minmax(300px, 1fr));
@@ -193,6 +218,7 @@
 }
 
 @media (max-width: 576px) {
+
     /* (DIUBAH) Di HP, buat 1 kolom */
     .order-grid {
         grid-template-columns: 1fr;
@@ -207,10 +233,12 @@
         flex-direction: column;
         align-items: stretch;
     }
+
     .order-card-actions label {
         margin-bottom: 8px;
         text-align: center;
     }
+
     .status-select {
         width: 100%;
     }
@@ -220,8 +248,10 @@
 #refresh-bar {
     position: fixed;
     bottom: 0;
-    left: 260px; /* Lebar sidebar */
-    width: calc(100% - 260px); /* Lebar sisa konten */
+    left: 260px;
+    /* Lebar sidebar */
+    width: calc(100% - 260px);
+    /* Lebar sisa konten */
     height: 5px;
     background-color: var(--accent-color);
     animation: shrink 30s linear infinite;
@@ -230,8 +260,13 @@
 
 /* Animasi untuk bar */
 @keyframes shrink {
-    from { width: calc(100% - 260px); }
-    to { width: 0%; }
+    from {
+        width: calc(100% - 260px);
+    }
+
+    to {
+        width: 0%;
+    }
 }
 
 /* Penyesuaian untuk mobile */
@@ -240,8 +275,77 @@
         left: 0;
         width: 100%;
     }
+
     @keyframes shrink {
-        from { width: 100%; }
-        to { width: 0%; }
+        from {
+            width: 100%;
+        }
+
+        to {
+            width: 0%;
+        }
     }
+}
+
+.status-select:disabled {
+    opacity: 0.5;
+    cursor: not-allowed;
+    background-color: var(--tertiary-color);
+}
+
+.order-toolbar {
+    display: flex;
+    flex-wrap: wrap;
+    justify-content: space-between;
+    align-items: center;
+    gap: 15px;
+    margin-bottom: 24px;
+}
+
+.order-toolbar .filter-group {
+    display: flex;
+    align-items: center;
+    gap: 10px;
+}
+
+.order-toolbar .filter-group label {
+    font-size: 0.9rem;
+    color: var(--text-muted);
+    white-space: nowrap;
+}
+
+.order-toolbar .filter-group select {
+    background-color: var(--secondary-color);
+    color: var(--light-text);
+    border: 1px solid var(--tertiary-color);
+    padding: 8px 12px;
+    border-radius: 5px;
+    font-family: "Montserrat", sans-serif;
+}
+
+/* Badge Pembayaran */
+.payment-badge {
+    font-size: 0.8rem;
+    padding: 4px 8px;
+    border-radius: 4px;
+    margin-left: 8px;
+    font-weight: bold;
+}
+
+.payment-qris {
+    background-color: #0a2a43;
+    /* Navy cyan gelap */
+    color: #4fb3ff;
+    /* Biru muda */
+    border: 1px solid #1d8cf8;
+    /* Biru electric */
+}
+
+.payment-cash {
+    background-color: #0c2f1d;
+    /* Hijau sangat gelap */
+    color: #6ee7b7;
+    /* Mint/hijau soft */
+    border: 1px solid #27ae60;
+    /* Hijau terang */
 }
