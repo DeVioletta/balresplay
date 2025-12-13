@@ -15,7 +15,7 @@
 <header class="header">
     <nav class="navbar">
         <div class="nav-container">
-            <a href="index.php" class="nav-logo">
+            <a href="menu.php" class="nav-logo">
                 <img src="images/logo_fix.png" alt="BalResplay Logo" class="logo-img">
                 <span class="logo-text">BalResplay</span>
             </a>

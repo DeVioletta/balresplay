@@ -18,6 +18,17 @@ $variants_data = [];
 $image_preview = 'https://placehold.co/300x200/2c2c2c/a0a0a0?text=Preview+Gambar';
 $page_title = "Tambah Menu Baru";
 
+// [PERBAIKAN] Ambil semua kategori unik yang ada di database
+$db_categories_raw = getAllCategories($db); // Mengembalikan array of assoc [['category'=>'name'], ...]
+$existing_categories = array_column($db_categories_raw, 'category');
+
+// Kategori default sistem (agar selalu ada opsi dasar)
+$default_categories = ['rice', 'noodles', 'lite-easy', 'coffee', 'tea', 'non-coffee', 'signature'];
+
+// Gabungkan dan hapus duplikat
+$all_categories = array_unique(array_merge($default_categories, $existing_categories));
+sort($all_categories); // Urutkan abjad
+
 if ($is_edit_mode) {
     $product_id = (int)$_GET['id'];
     $product_data = getProductById($db, $product_id); //
@@ -34,15 +45,12 @@ if ($is_edit_mode) {
     }
 }
 
-// [PERBAIKAN LOGIKA] Tentukan tipe produk untuk keperluan UI
-// Jika varian kosong ATAU hanya ada 1 varian dan namanya kosong/null -> Simple (Satuan)
-// Selain itu -> Variable (Varian)
+// Tentukan tipe produk untuk keperluan UI (Logika UX)
 $product_type = 'simple'; // Default
 if (!empty($variants_data)) {
     if (count($variants_data) > 1) {
         $product_type = 'variable';
     } elseif (count($variants_data) == 1 && !empty($variants_data[0]['variant_name'])) {
-        // Cek variant_name dari database (sesuai field di getProductById -> variants[])
         $product_type = 'variable';
     }
 }
@@ -75,15 +83,14 @@ if (!empty($variants_data)) {
             opacity: 0.7;
         }
         
-        /* [PERBAIKAN CSS] Helper class untuk mode Simple (Satuan) */
-        /* Menyembunyikan input nama varian dan tombol hapus agar tampilan bersih */
+        /* Helper class untuk mode Simple (Satuan) */
         .mode-simple .variant-name-input { display: none; }
         .mode-simple .btn-delete-variant { visibility: hidden; } 
-        .mode-simple .variant-row { grid-template-columns: 1fr 100px auto; } /* Ubah grid agar input harga melebar */
+        .mode-simple .variant-row { grid-template-columns: 1fr 100px auto; } 
         
         @media (max-width: 768px) {
             #variants-container .variant-row { grid-template-columns: 1fr; }
-            .mode-simple .variant-row { grid-template-columns: 1fr; } /* Tetap stack di mobile */
+            .mode-simple .variant-row { grid-template-columns: 1fr; }
             .variant-availability { justify-content: flex-start; }
         }
     </style>
@@ -176,13 +183,14 @@ if (!empty($variants_data)) {
                         </div>
                         <div class="form-group">
                             <label for="product_category">Kategori (Pilih yang sudah ada)</label>
+                            <!-- [PERBAIKAN] Dropdown Dinamis -->
                             <select id="product_category" name="product_category" <?php if ($is_dapur_readonly) echo 'disabled'; ?>>
                                 <option value="" <?php echo empty($product_data['category']) ? 'selected' : ''; ?>>Pilih Kategori</option>
                                 <?php 
-                                    $all_cats = ['rice', 'noodles', 'lite-easy', 'coffee', 'tea', 'non-coffee', 'signature'];
-                                    foreach ($all_cats as $cat) {
+                                    foreach ($all_categories as $cat) {
+                                        // Cek apakah kategori ini sama dengan kategori produk saat ini
                                         $selected = (isset($product_data['category']) && $product_data['category'] == $cat) ? 'selected' : '';
-                                        echo "<option value=\"$cat\" $selected>" . ucfirst($cat) . "</option>";
+                                        echo "<option value=\"" . htmlspecialchars($cat) . "\" $selected>" . ucfirst(str_replace('-', ' ', $cat)) . "</option>";
                                     }
                                 ?>
                             </select>
@@ -203,7 +211,7 @@ if (!empty($variants_data)) {
                     <div class="form-section">
                         <h4>Harga & Varian <?php if ($is_dapur_readonly) echo '(Hanya bisa ubah ketersediaan)'; ?></h4>
                         
-                        <!-- [PERBAIKAN UI] Radio Button Tipe Menu -->
+                        <!-- Radio Button Tipe Menu -->
                         <div class="form-group" style="margin-bottom: 25px;">
                             <label style="margin-bottom: 10px; display: block;">Tipe Menu:</label>
                             <div style="display: flex; gap: 20px; flex-wrap: wrap;">
@@ -226,11 +234,10 @@ if (!empty($variants_data)) {
                             Atur ketersediaan (stok) menggunakan checkbox "Tersedia".
                         </p>
                         
-                        <!-- Tambahkan ID dan Class dinamis -->
                         <div id="variants-container" class="<?php echo ($product_type == 'simple') ? 'mode-simple' : ''; ?>">
                             
                             <?php if (empty($variants_data)): ?>
-                                <!-- Baris Default (Input nama diberi class 'variant-name-input') -->
+                                <!-- Baris Default -->
                                 <div class="variant-row">
                                     <input type="text" name="variants[0][name]" class="variant-name-input" placeholder="Nama Varian (cth: Hot / Ice)" <?php if ($is_dapur_readonly) echo 'disabled'; ?>>
                                     <input type="number" name="variants[0][price]" placeholder="Harga (cth: 20000)" required <?php if ($is_dapur_readonly) echo 'disabled'; ?>>
@@ -246,7 +253,6 @@ if (!empty($variants_data)) {
                                 <?php foreach ($variants_data as $index => $variant): ?>
                                     <div class="variant-row">
                                         <input type="hidden" name="variants[<?php echo $index; ?>][id]" value="<?php echo $variant['variant_id']; ?>">
-                                        <!-- Input nama diberi class 'variant-name-input' dan menggunakan key 'variant_name' dari DB -->
                                         <input type="text" name="variants[<?php echo $index; ?>][name]" class="variant-name-input" placeholder="Nama Varian" 
                                                value="<?php echo htmlspecialchars($variant['variant_name'] ?? ''); ?>" <?php if ($is_dapur_readonly) echo 'disabled'; ?>>
                                         <input type="number" name="variants[<?php echo $index; ?>][price]" placeholder="Harga" required 
@@ -266,7 +272,6 @@ if (!empty($variants_data)) {
                             
                         </div>
                         
-                        <!-- Tombol Tambah Varian (Akan disembunyikan via CSS jika mode-simple aktif) -->
                         <button type="button" id="add-variant-btn" class="btn btn-secondary" 
                                 <?php if ($is_dapur_readonly) echo 'disabled'; ?>
                                 style="<?php echo ($product_type == 'simple') ? 'display: none;' : ''; ?>">
@@ -306,7 +311,6 @@ if (!empty($variants_data)) {
             const variantsContainer = document.getElementById('variants-container');
             const addVariantBtn = document.getElementById('add-variant-btn');
             
-            // --- [PERBAIKAN LOGIKA JS] Switch Tipe Produk ---
             const typeRadios = document.querySelectorAll('input[name="ui_product_type"]');
             
             typeRadios.forEach(radio => {
@@ -320,22 +324,18 @@ if (!empty($variants_data)) {
                         
                         if (rows.length > 1) {
                             if (!confirm(confirmMsg)) {
-                                // Batalkan jika user menolak
                                 document.querySelector('input[value="variable"]').checked = true;
                                 return;
                             }
                         }
 
-                        // Hapus semua baris kecuali yang pertama
                         while (variantsContainer.children.length > 1) {
                             variantsContainer.lastChild.remove();
                         }
 
-                        // Kosongkan nama varian baris pertama (agar dikirim NULL/kosong ke DB)
                         const firstRowName = variantsContainer.querySelector('input[name*="[name]"]');
                         if (firstRowName) firstRowName.value = '';
 
-                        // Tambah class untuk sembunyikan UI varian
                         variantsContainer.classList.add('mode-simple');
                         addVariantBtn.style.display = 'none';
 
@@ -347,11 +347,9 @@ if (!empty($variants_data)) {
                 });
             });
 
-            // --- Logic Tambah Varian ---
             let variantIndex = <?php echo count($variants_data) > 0 ? count($variants_data) : 1; ?>;
 
             addVariantBtn.addEventListener('click', () => {
-                // Cari index tertinggi agar aman dari duplikat index array
                 let maxIndex = -1;
                 variantsContainer.querySelectorAll('.variant-row').forEach(row => {
                    const inputName = row.querySelector('input[name^="variants"]');
@@ -368,7 +366,6 @@ if (!empty($variants_data)) {
                 const newRow = document.createElement('div');
                 newRow.classList.add('variant-row');
                 
-                // Pastikan input name punya class "variant-name-input"
                 newRow.innerHTML = `
                     <input type="text" name="variants[${variantIndex}][name]" class="variant-name-input" placeholder="Nama Varian (cth: Hot / Ice)" ${isDapur ? 'disabled' : ''}>
                     <input type="number" name="variants[${variantIndex}][price]" placeholder="Harga" required ${isDapur ? 'disabled' : ''}>
@@ -388,7 +385,6 @@ if (!empty($variants_data)) {
                     if (variantsContainer.children.length > 1) {
                         e.target.closest('.variant-row').remove();
                     } else {
-                        // Jika baris terakhir, jangan hapus tapi reset
                         const lastRow = variantsContainer.querySelector('.variant-row');
                         const nameInput = lastRow.querySelector('input[type="text"]');
                         if(nameInput) nameInput.value = '';
@@ -423,15 +419,12 @@ if (!empty($variants_data)) {
             menuForm.addEventListener('submit', (e) => {
                 if (isDapur) { return; }
                 
-                // Clear previous errors
                 errorMessage.style.display = 'none';
                 errorMessage.innerHTML = '';
                 let errors = [];
 
-                // Validasi field required
                 const requiredFields = menuForm.querySelectorAll('[required]');
                 requiredFields.forEach(field => {
-                    // Abaikan field yang sedang disembunyikan/disabled (misal di mode simple)
                     if (field.disabled || field.offsetParent === null) return;
 
                     if (field.value.trim() === '') {
@@ -445,22 +438,18 @@ if (!empty($variants_data)) {
                     }
                 });
 
-                // Validasi Kategori
                 const category = document.getElementById('product_category').value;
                 const newCategory = document.getElementById('new_category').value.trim();
                 if (category === '' && newCategory === '') {
                     errors.push('- Kategori wajib dipilih atau diisi.');
                 }
 
-                // Tampilkan Error jika ada
                 if (errors.length > 0) {
-                    e.preventDefault(); // Stop submit
+                    e.preventDefault(); 
                     errorMessage.innerHTML = '<strong>Validasi Gagal:</strong><br>' + errors.join('<br>');
                     errorMessage.style.display = 'block';
                     window.scrollTo({ top: 0, behavior: 'smooth' });
                 } else {
-                    // Jika mode simple, pastikan input nama varian dikosongkan sebelum submit
-                    // agar backend membacanya sebagai NULL
                     const isSimpleMode = document.querySelector('input[name="ui_product_type"][value="simple"]').checked;
                     if (isSimpleMode) {
                         const variantNameInputs = variantsContainer.querySelectorAll('.variant-name-input');
