@@ -292,7 +292,7 @@ h5 {
 .item-image img {
     width: 100%;
     height: 100%;
-    object-fit: cover;
+    object-fit: contain;
     transition: var(--transition);
 }
 
@@ -842,9 +842,6 @@ h5 {
     background-color: var(--secondary-color);
 }
 
-.status-items-list {
-    /* Padding sudah dihandle oleh .cart-items */
-}
 
 .status-item {
     display: flex;

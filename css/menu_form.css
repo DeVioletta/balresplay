@@ -121,9 +121,9 @@
 }
 
 /* === RESPONSIVE UNTUK FORM === */
-@media (max-width: 992px) {
+@media (max-width: 768px) { /* (DIUBAH) dari 992px */
     #variants-container .variant-row {
-        grid-template-columns: 1fr; /* Stack di HP */
+        grid-template-columns: 1fr; /* Stack di HP / Tablet potret */
     }
 }
 

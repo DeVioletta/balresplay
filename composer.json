@@ -1,0 +1,15 @@
+{
+    "name": "balresplay/app",
+    "description": "Sistem pemesanan dan manajemen cafe",
+    "license": "proprietary",
+    "authors": [
+        {
+            "name": "Amrestya Gaia"
+        }
+    ],
+    "minimum-stability": "stable",
+    "require": {
+        "phpoffice/phpspreadsheet": "^5.2",
+        "midtrans/midtrans-php": "^2.6"
+    }
+}
