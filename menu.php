@@ -59,7 +59,7 @@ $table_numbers = range(1, $table_count);
     <link href="https://fonts.googleapis.com/css2?family=Cormorant+Garamond:wght@300;400;600;700&family=Montserrat:wght@300;400;500&display=swap" rel="stylesheet">
     
     <!-- Ganti CLIENT_KEY dengan Client Key Midtrans Anda -->
-    <script src="https://app.sandbox.midtrans.com/snap/snap.js" data-client-key="CLIENT KEY"></script>
+    <script src="https://app.sandbox.midtrans.com/snap/snap.js" data-client-key="YOUR_CLIENT_KEY"></script>
 </head>
 <body>
 

@@ -10,15 +10,8 @@
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
     <link href="https://fonts.googleapis.com/css2?family=Cormorant+Garamond:wght@300;400;600;700&family=Montserrat:wght@300;400;500&display=swap" rel="stylesheet">
     
-    <script src="https://app.sandbox.midtrans.com/snap/snap.js" data-client-key="CLIENT_KEY"></script>
+    <script src="https://app.sandbox.midtrans.com/snap/snap.js" data-client-key="YOUR_CLIENT_KEY"></script>
 
-    <style>
-        .btn-confirm-order:disabled {
-            background-color: var(--tertiary-color);
-            cursor: not-allowed;
-            opacity: 0.7;
-        }
-    </style>
 </head>
 
 <body>

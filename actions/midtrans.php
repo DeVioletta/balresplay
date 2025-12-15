@@ -13,7 +13,7 @@ use Midtrans\Snap;
 // KONFIGURASI MIDTRANS
 // ============================================
 // GANTI 'SERVER KEY' DENGAN KUNCI SERVER ASLI DARI DASHBOARD MIDTRANS
-Config::$serverKey = 'SERVER KEY'; 
+Config::$serverKey = 'YOUR_SERVER_KEY'; 
 Config::$isProduction = false; // Ubah ke true jika sudah live
 Config::$isSanitized = true;
 Config::$is3ds = true;
