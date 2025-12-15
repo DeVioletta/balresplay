@@ -1,7 +1,11 @@
 <?php
-// FILE: balresplay/actions/handle_order.php
+/**
+ * File: handle_order.php
+ * Deskripsi: Endpoint utama untuk memproses pesanan baru dari pelanggan.
+ * Fungsi: Validasi, Insert Database (Transaction), dan Request Midtrans Snap Token.
+ */
 
-// Matikan output error HTML agar tidak merusak JSON
+// Nonaktifkan display error HTML agar tidak merusak format JSON respons
 ini_set('display_errors', 0);
 error_reporting(E_ALL);
 
@@ -12,7 +16,9 @@ startSecureSession();
 header('Content-Type: application/json');
 
 try {
-    // 1. Ambil data JSON
+    // ----------------------------------------------------------------------
+    // 1. Persiapan Data & Validasi
+    // ----------------------------------------------------------------------
     $json_data = file_get_contents('php://input');
     $data = json_decode($json_data, true);
 
@@ -20,15 +26,24 @@ try {
         throw new Exception("Data pesanan tidak lengkap.");
     }
 
+    // Validasi apakah sesi pelanggan masih ada
+    $customer_id = $_SESSION['customer_id'] ?? '';
+    if (empty($customer_id)) {
+        throw new Exception("Sesi Anda telah berakhir. Silakan refresh halaman menu.");
+    }
+
     $cart_data = $data['cartData'];
     $table_number = (int)$data['tableNumber'];
     $payment_method = $data['paymentMethod']; 
     $service_fee = 2000;
 
-    // 2. Mulai Transaksi Database
+    // ----------------------------------------------------------------------
+    // 2. Database Transaction (Start)
+    // ----------------------------------------------------------------------
+    // Menggunakan transaksi agar jika gagal insert item, order utama juga batal.
     $db->begin_transaction();
 
-    // Hitung Total
+    // Hitung Total Harga & Gabungkan Catatan
     $total_price = $service_fee;
     $notes_arr = [];
     foreach ($cart_data as $item) {
@@ -39,9 +54,11 @@ try {
     }
     $notes_string = implode("; ", $notes_arr);
 
-    // Insert Order Utama
-    $stmt = $db->prepare("INSERT INTO orders (table_number, total_price, payment_method, notes, status, order_time) VALUES (?, ?, ?, ?, 'Menunggu Pembayaran', NOW())");
-    $stmt->bind_param("idss", $table_number, $total_price, $payment_method, $notes_string);
+    // ----------------------------------------------------------------------
+    // 3. Insert ke Tabel `orders`
+    // ----------------------------------------------------------------------
+    $stmt = $db->prepare("INSERT INTO orders (customer_id, table_number, total_price, payment_method, notes, status, order_time) VALUES (?, ?, ?, ?, ?, 'Menunggu Pembayaran', NOW())");
+    $stmt->bind_param("sidss", $customer_id, $table_number, $total_price, $payment_method, $notes_string);
     
     if (!$stmt->execute()) {
         throw new Exception("Database Error (Order): " . $stmt->error);
@@ -49,7 +66,9 @@ try {
     $order_id = $db->insert_id;
     $stmt->close();
 
-    // Insert Item Pesanan
+    // ----------------------------------------------------------------------
+    // 4. Insert ke Tabel `order_items`
+    // ----------------------------------------------------------------------
     $stmt_item = $db->prepare("INSERT INTO order_items (order_id, variant_id, quantity, price_per_item) VALUES (?, ?, ?, ?)");
     foreach ($cart_data as $item) {
         $stmt_item->bind_param("iiid", $order_id, $item['variant_id'], $item['quantity'], $item['price']);
@@ -59,23 +78,23 @@ try {
     }
     $stmt_item->close();
 
-    // 3. INTEGRASI MIDTRANS
+    // ----------------------------------------------------------------------
+    // 5. Integrasi Midtrans (Jika QRIS)
+    // ----------------------------------------------------------------------
     $snapToken = null;
-    
     if ($payment_method === 'QRIS') {
         try {
-            // Panggil fungsi getSnapToken yang sudah diperbaiki
             $snapToken = getSnapToken($order_id, $total_price);
         } catch (Exception $midtransError) {
-            // Tangkap error asli Midtrans dan lempar ke catch utama
             throw new Exception("Midtrans Gagal: " . $midtransError->getMessage());
         }
     }
 
-    // Commit Database jika semua lancar
+    // ----------------------------------------------------------------------
+    // 6. Commit & Response
+    // ----------------------------------------------------------------------
     $db->commit();
 
-    // Kirim JSON Sukses
     echo json_encode([
         'status' => 'success',
         'message' => 'Pesanan berhasil dibuat.',
@@ -84,10 +103,9 @@ try {
     ]);
 
 } catch (Exception $e) {
-    // Rollback jika ada error apa pun
+    // Rollback: Batalkan semua perubahan database jika terjadi error
     if (isset($db)) { $db->rollback(); }
     
-    // Kirim pesan error asli ke frontend
     echo json_encode([
         'status' => 'error', 
         'message' => $e->getMessage()

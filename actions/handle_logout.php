@@ -1,15 +1,19 @@
 <?php
+/**
+ * File: handle_logout.php
+ * Deskripsi: Menghapus sesi pengguna dan mengarahkan kembali ke halaman login.
+ */
+
 require_once __DIR__ . '/../config/database.php';
 startSecureSession();
 
-// Hapus semua variabel sesi
+// Kosongkan array sesi
 $_SESSION = array();
 
-// Hancurkan sesi
+// Hancurkan sesi di server
 session_destroy();
 
-// Alihkan kembali ke halaman login
-// (PERBAIKAN) Tambahkan ../ untuk path relatif yang benar
+// Redirect ke halaman login
 header("Location: ../admin_login.php");
 exit();
 ?>

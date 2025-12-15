@@ -10,8 +10,8 @@ if ($role !== 'Kasir' && $role !== 'Super Admin' && $role !== 'Dapur') {
     exit();
 }
 
-$products = getAllProductsWithVariants($db); //
-$categories = getAllCategories($db); //
+$products = getAllProductsWithVariants($db); 
+$categories = getAllCategories($db); 
 
 $message = '';
 if (isset($_GET['success'])) {
@@ -42,8 +42,6 @@ if (isset($_GET['error'])) {
         .admin-message.success { background-color: var(--success-color); color: var(--light-text); }
         .admin-message.error { background-color: var(--danger-color); color: var(--light-text); }
         
-
-        /* (BARU) Styling untuk Search Bar */
         .search-bar-container {
             margin-bottom: 24px;
         }
@@ -63,7 +61,6 @@ if (isset($_GET['error'])) {
             background-color: var(--secondary-color);
         }
         
-        /* (BARU) Style untuk no-result */
         .no-search-results {
             color: var(--text-muted);
             text-align: center;
@@ -136,7 +133,6 @@ if (isset($_GET['error'])) {
                 <h1>Manajemen Menu</h1>
             </header>
 
-            <!-- (BARU) Search Bar -->
             <div class="search-bar-container">
                 <div class="search-input-wrapper">
                     <i class="fas fa-search"></i>
@@ -231,97 +227,6 @@ if (isset($_GET['error'])) {
         <div class="sidebar-overlay" id="sidebar-overlay"></div>
     </div>
 
-    <script>
-        document.addEventListener('DOMContentLoaded', () => {
-            const hamburger = document.getElementById('hamburger');
-            const sidebar = document.getElementById('sidebar');
-            const overlay = document.getElementById('sidebar-overlay');
-            if (hamburger) hamburger.addEventListener('click', () => sidebar.classList.add('show'));
-            if (overlay) overlay.addEventListener('click', () => sidebar.classList.remove('show'));
-
-            // --- Logika Filter dan Search ---
-            const categoryFilter = document.getElementById('category-filter');
-            const searchInput = document.getElementById('menu-search-input');
-            const menuGrid = document.querySelector('.admin-menu-grid');
-            const allItems = document.querySelectorAll('.admin-menu-grid .menu-item');
-
-            let noResultsMessage = document.createElement('p');
-            noResultsMessage.classList.add('no-search-results');
-            noResultsMessage.textContent = 'Tidak ada menu yang cocok dengan pencarian Anda.';
-            menuGrid.appendChild(noResultsMessage);
-
-            function filterMenuItems() {
-                const selectedCategory = categoryFilter.value;
-                const searchTerm = searchInput.value.toLowerCase().trim();
-                let itemsFound = 0;
-
-                allItems.forEach(item => {
-                    const itemCategory = item.dataset.category;
-                    const itemName = item.dataset.name.toLowerCase();
-
-                    const categoryMatch = (selectedCategory === 'all' || itemCategory === selectedCategory);
-                    const nameMatch = itemName.includes(searchTerm);
-
-                    if (categoryMatch && nameMatch) {
-                        item.style.display = 'flex';
-                        itemsFound++;
-                    } else {
-                        item.style.display = 'none';
-                    }
-                });
-
-                if (itemsFound === 0) {
-                    noResultsMessage.style.display = 'block';
-                } else {
-                    noResultsMessage.style.display = 'none';
-                }
-            }
-
-            if (categoryFilter) {
-                categoryFilter.addEventListener('change', filterMenuItems);
-            }
-
-            if (searchInput) {
-                searchInput.addEventListener('input', filterMenuItems);
-            }
-            
-            // --- Logika Tombol Hapus (IMPLEMENTASI BARU) ---
-            document.querySelectorAll('.btn-delete-menu').forEach(button => {
-                button.addEventListener('click', function() {
-                    const productId = this.getAttribute('data-id');
-                    const productName = this.getAttribute('data-name');
-                    
-                    if (confirm(`Apakah Anda yakin ingin menghapus menu "${productName}"? Tindakan ini tidak dapat dibatalkan.`)) {
-                        fetch(`actions/delete_menu.php?id=${productId}`)
-                            .then(response => response.json())
-                            .then(data => {
-                                if (data.status === 'success') {
-                                    alert('Menu berhasil dihapus.');
-                                    // Hapus elemen dari DOM
-                                    this.closest('.menu-item').remove();
-                                } else {
-                                    alert('Gagal menghapus menu: ' + data.message);
-                                }
-                            })
-                            .catch(error => {
-                                console.error('Error:', error);
-                                alert('Terjadi kesalahan koneksi.');
-                            });
-                    }
-                });
-            });
-
-            // Logika untuk auto-hide message
-            const messageElement = document.getElementById('auto-hide-message');
-            if (messageElement) {
-                setTimeout(() => {
-                    messageElement.style.opacity = '0'; 
-                    setTimeout(() => {
-                        messageElement.remove(); 
-                    }, 500); 
-                }, 4000); 
-            }
-        });
-    </script>
+    <script src="js/admin_menu.js"></script>
 </body>
 </html>

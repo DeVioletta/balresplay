@@ -12,19 +12,15 @@ if ($role !== 'Super Admin') {
     exit();
 }
 
-// Ambil data user (tidak berubah)
-$users_result = getAllAdminUsers($db); //
+$users_result = getAllAdminUsers($db); 
 
-// (BARU) Ambil data pengaturan
 $settings_result = $db->query("SELECT * FROM settings");
 $settings = [];
 while ($row = $settings_result->fetch_assoc()) {
     $settings[$row['setting_key']] = $row['setting_value'];
 }
-$table_count = $settings['table_count'] ?? '20'; // Default '20'
+$table_count = $settings['table_count'] ?? '20'; 
 
-
-// Logika pesan notifikasi (DIUPDATE)
 $message = '';
 $message_type = '';
 if (isset($_GET['error'])) {
@@ -35,7 +31,7 @@ if (isset($_GET['error'])) {
     if ($error == 'selfdelete') $message = 'Anda tidak dapat menghapus akun Anda sendiri.';
     if ($error == 'unauthorized') $message = 'Anda tidak memiliki izin untuk melakukan aksi ini.';
     if ($error == 'failed') $message = 'Terjadi kesalahan. Silakan coba lagi.';
-    if ($error == 'invalid_number') $message = 'Jumlah meja harus berupa angka positif.'; // (BARU)
+    if ($error == 'invalid_number') $message = 'Jumlah meja harus berupa angka positif.';
 }
 if (isset($_GET['success'])) {
     $success = $_GET['success'];
@@ -43,7 +39,7 @@ if (isset($_GET['success'])) {
     if ($success == 'created') $message = 'Akun baru berhasil dibuat. Status: Nonaktif.';
     if ($success == 'deleted') $message = 'Akun berhasil dihapus.';
     if ($success == 'updated') $message = 'Akun berhasil diperbarui.';
-    if ($success == 'settings_updated') $message = 'Pengaturan berhasil disimpan.'; // (BARU)
+    if ($success == 'settings_updated') $message = 'Pengaturan berhasil disimpan.'; 
 }
 ?>
 
@@ -56,37 +52,7 @@ if (isset($_GET['success'])) {
     <link rel="stylesheet" href="css/variable.css">
     <link rel="stylesheet" href="css/admin_menu.css"> <link rel="stylesheet" href="css/admin_settings.css"> <link rel="stylesheet" href="css/menu_form.css"> <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
     <link href="https://fonts.googleapis.com/css2?family=Cormorant+Garamond:wght@300;400;600;700&family=Montserrat:wght@300;400;500&display=swap" rel="stylesheet">
-    <style>
-        .admin-message { padding: 15px; border-radius: 5px; margin-bottom: 20px; font-weight: 500; }
-        .admin-message.success { background-color: var(--success-color); color: var(--light-text); }
-        .admin-message.error { background-color: var(--danger-color); color: var(--light-text); }
-        .switch { position: relative; display: inline-block; width: 50px; height: 28px; }
-        .switch input { opacity: 0; width: 0; height: 0; }
-        .slider { position: absolute; cursor: pointer; top: 0; left: 0; right: 0; bottom: 0; background-color: var(--tertiary-color); transition: .4s; }
-        .slider:before { position: absolute; content: ""; height: 20px; width: 20px; left: 4px; bottom: 4px; background-color: white; transition: .4s; }
-        input:checked + .slider { background-color: var(--success-color); }
-        input:checked + .slider:before { transform: translateX(22px); }
-        .slider.round { border-radius: 34px; }
-        .slider.round:before { border-radius: 50%; }
-        .form-group-toggle { display: flex; align-items: center; justify-content: space-between; margin-top: 15px; }
-        
-        /* (BARU) Style untuk card pengaturan */
-        .settings-card {
-            background-color: var(--darker-bg);
-            border: 1px solid var(--tertiary-color);
-            border-radius: 10px;
-            margin-bottom: 30px;
-        }
-        .settings-card h4 {
-            font-size: 1.5rem;
-            margin: 0;
-            padding: 24px 30px;
-            border-bottom: 1px solid var(--tertiary-color);
-        }
-        .settings-card form {
-            padding: 24px 30px;
-        }
-    </style>
+
 </head>
 <body>
     
@@ -262,78 +228,6 @@ if (isset($_GET['success'])) {
         </div>
     </div>
 
-
-    <script>
-        // (JavaScript Modal Akun - Tidak Berubah)
-        document.addEventListener('DOMContentLoaded', () => {
-            const hamburger = document.getElementById('hamburger');
-            const sidebar = document.getElementById('sidebar');
-            const overlay = document.getElementById('sidebar-overlay');
-            if (hamburger) hamburger.addEventListener('click', () => sidebar.classList.add('show'));
-            if (overlay) overlay.addEventListener('click', () => sidebar.classList.remove('show'));
-
-            const modal = document.getElementById('account-modal');
-            const addBtn = document.getElementById('add-account-btn');
-            const closeBtn = document.getElementById('modal-close');
-            const cancelBtn = document.getElementById('modal-cancel-btn');
-            const form = document.getElementById('account-form');
-            const modalTitle = document.getElementById('modal-title');
-            const passwordInput = document.getElementById('password');
-            const passwordHint = document.getElementById('password-hint');
-            const statusToggle = document.getElementById('status-toggle-group');
-            const statusCheckbox = document.getElementById('status');
-            const userIdInput = document.getElementById('user_id');
-            const usernameInput = document.getElementById('username');
-            const roleInput = document.getElementById('role');
-            
-            const closeModal = () => {
-                modal.classList.remove('show');
-                form.reset();
-            };
-
-            addBtn.addEventListener('click', () => {
-                form.reset();
-                userIdInput.value = '';
-                modalTitle.textContent = 'Tambah Akun Baru';
-                passwordInput.required = true;
-                passwordHint.textContent = 'Wajib diisi untuk akun baru.';
-                statusToggle.style.display = 'none';
-                modal.classList.add('show');
-            });
-            
-            document.querySelectorAll('.btn-edit-account').forEach(button => {
-                button.addEventListener('click', (e) => {
-                    const btn = e.currentTarget;
-                    userIdInput.value = btn.dataset.id;
-                    usernameInput.value = btn.dataset.username;
-                    roleInput.value = btn.dataset.role;
-                    statusCheckbox.checked = (btn.dataset.status == 1);
-                    modalTitle.textContent = 'Edit Akun: ' + btn.dataset.username;
-                    passwordInput.required = false;
-                    passwordHint.textContent = 'Kosongkan jika tidak ingin ganti password.';
-                    statusToggle.style.display = 'flex';
-                    modal.classList.add('show');
-                });
-            });
-
-            if (closeBtn) closeBtn.addEventListener('click', closeModal);
-            if (cancelBtn) cancelBtn.addEventListener('click', closeModal);
-            if (modal) {
-                modal.addEventListener('click', (e) => {
-                    if (e.target === modal) closeModal();
-                });
-            }
-
-            const togglePassword = document.getElementById('toggle-password');
-            if (togglePassword) {
-                togglePassword.addEventListener('click', function () {
-                    const type = passwordInput.getAttribute('type') === 'password' ? 'text' : 'password';
-                    passwordInput.setAttribute('type', type);
-                    this.classList.toggle('fa-eye');
-                    this.classList.toggle('fa-eye-slash');
-                });
-            }
-        });
-    </script>
+    <script src="js/admin_settings.js"></script>
 </body>
 </html>

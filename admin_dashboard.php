@@ -3,9 +3,8 @@ require_once __DIR__ . '/config/database.php';
 startSecureSession();
 redirectIfNotLoggedIn('admin_login.php');
 
-// (PERBAIKAN POIN 2) Role check
+// Role check
 if ($_SESSION['role'] == 'Dapur') {
-    // Dapur tidak bisa akses dashboard, tendang ke Menu
     header("Location: admin_menu.php");
     exit();
 }
@@ -14,17 +13,16 @@ if ($_SESSION['role'] == 'Dapur') {
 $error_message = '';
 if (isset($_SESSION['error_message'])) {
     $error_message = $_SESSION['error_message'];
-    unset($_SESSION['error_message']); // Hapus setelah ditampilkan
+    unset($_SESSION['error_message']); 
 }
 
-// (LOGIKA STATISTIK - tidak berubah)
+// Logika Statistik
 $start_date = $_GET['start_date'] ?? null;
 $end_date = $_GET['end_date'] ?? null;
 $stats = getDashboardStats($db, $start_date, $end_date);
 $top_menus = getTopMenus($db, $start_date, $end_date);
 $order_details = getDashboardOrderDetails($db, $start_date, $end_date);
 ?>
-
 
 <!DOCTYPE html>
 <html lang="id">
@@ -53,38 +51,32 @@ $order_details = getDashboardOrderDetails($db, $start_date, $end_date);
             
             <nav class="nav-list">
                 <?php 
-                // Ambil role dan halaman saat ini
                 $role = $_SESSION['role']; 
                 $currentPage = basename($_SERVER['PHP_SELF']); 
                 ?>
                 
                 <?php if ($role == 'Super Admin' || $role == 'Kasir'): ?>
-                    <a href="admin_dashboard.php" 
-                       class="<?php echo $currentPage == 'admin_dashboard.php' ? 'active' : ''; ?>">
+                    <a href="admin_dashboard.php" class="<?php echo $currentPage == 'admin_dashboard.php' ? 'active' : ''; ?>">
                        <i class="fas fa-tachometer-alt"></i> Dashboard
                     </a>
                 <?php endif; ?>
                 
-                <a href="admin_menu.php" 
-                   class="<?php echo ($currentPage == 'admin_menu.php' || $currentPage == 'admin_form_menu.php') ? 'active' : ''; ?>">
+                <a href="admin_menu.php" class="<?php echo ($currentPage == 'admin_menu.php' || $currentPage == 'admin_form_menu.php') ? 'active' : ''; ?>">
                    <i class="fas fa-utensils"></i> Menu Cafe
                 </a>
                 
                 <?php if ($role == 'Dapur'): ?>
-                    <a href="kitchen_display.php" 
-                       class="<?php echo $currentPage == 'kitchen_display.php' ? 'active' : ''; ?>">
+                    <a href="kitchen_display.php" class="<?php echo $currentPage == 'kitchen_display.php' ? 'active' : ''; ?>">
                        <i class="fas fa-receipt"></i> Antrian Dapur
                     </a>
-                <?php else: // Super Admin & Kasir melihat Admin Orders ?>
-                    <a href="admin_orders.php" 
-                       class="<?php echo $currentPage == 'admin_orders.php' ? 'active' : ''; ?>">
+                <?php else: ?>
+                    <a href="admin_orders.php" class="<?php echo $currentPage == 'admin_orders.php' ? 'active' : ''; ?>">
                        <i class="fas fa-receipt"></i> Pesanan
                     </a>
                 <?php endif; ?>
                 
                 <?php if ($role == 'Super Admin'): ?>
-                    <a href="admin_settings.php" 
-                       class="<?php echo $currentPage == 'admin_settings.php' ? 'active' : ''; ?>">
+                    <a href="admin_settings.php" class="<?php echo $currentPage == 'admin_settings.php' ? 'active' : ''; ?>">
                        <i class="fas fa-cog"></i> Pengaturan
                     </a>
                 <?php endif; ?>
@@ -149,14 +141,14 @@ $order_details = getDashboardOrderDetails($db, $start_date, $end_date);
                     <input type="text" id="start_date_picker" name="start_date" class="form-control" readonly 
                            style="cursor: pointer; background-color: var(--darker-bg);" 
                            placeholder="Pilih tanggal mulai..."
-                           value="<?php echo htmlspecialchars($start_date ?? ''); // (BARU) Tampilkan nilai filter ?>">
+                           value="<?php echo htmlspecialchars($start_date ?? ''); ?>">
                 </div>
                 <div class="form-group">
                     <label for="end_date_picker">End Date</label>
                     <input type="text" id="end_date_picker" name="end_date" class="form-control" readonly 
                            style="cursor: pointer; background-color: var(--darker-bg);" 
                            placeholder="Pilih tanggal akhir..."
-                           value="<?php echo htmlspecialchars($end_date ?? ''); // (BARU) Tampilkan nilai filter ?>">
+                           value="<?php echo htmlspecialchars($end_date ?? ''); ?>">
                 </div>
                 
                 <button type="submit" class="btn btn-secondary">
@@ -213,75 +205,7 @@ $order_details = getDashboardOrderDetails($db, $start_date, $end_date);
         <div class="sidebar-overlay" id="sidebar-overlay"></div>
     </div>
 
-    
     <script src="https://cdn.jsdelivr.net/npm/litepicker/dist/litepicker.js"></script>
-    <script>
-        document.addEventListener('DOMContentLoaded', () => {
-            // --- Logika Sidebar Hamburger (Tidak Berubah) ---
-            const hamburger = document.getElementById('hamburger');
-            const sidebar = document.getElementById('sidebar');
-            const overlay = document.getElementById('sidebar-overlay');
-
-            if (hamburger) hamburger.addEventListener('click', () => sidebar.classList.add('show'));
-            if (overlay) overlay.addEventListener('click', () => sidebar.classList.remove('show'));
-
-            // --- Logika Litepicker (Tidak Berubah) ---
-            const startDateEl = document.getElementById('start_date_picker');
-            const endDateEl = document.getElementById('end_date_picker');
-
-            const startDatePicker = new Litepicker({
-                element: startDateEl,
-                singleMode: true,
-                format: 'YYYY-MM-DD',
-                placeholder: 'Pilih tanggal mulai...',
-                dropdowns: { minYear: 2020, maxYear: null, months: true, years: true }
-            });
-
-            const endDatePicker = new Litepicker({
-                element: endDateEl,
-                singleMode: true,
-                format: 'YYYY-MM-DD',
-                placeholder: 'Pilih tanggal akhir...',
-                dropdowns: { minYear: 2020, maxYear: null, months: true, years: true }
-            });
-
-            if (startDateEl.value) {
-                startDatePicker.setDate(new Date(startDateEl.value));
-            }
-            if (endDateEl.value) {
-                endDatePicker.setDate(new Date(endDateEl.value));
-            }
-
-
-            // --- (PERBAIKAN POIN 3) Logika Tombol Unduh ---
-            const downloadBtn = document.getElementById('download-excel-btn');
-            if (downloadBtn) {
-                downloadBtn.addEventListener('click', () => {
-                    // Ambil nilai tanggal dari input
-                    const startDate = startDateEl.value;
-                    const endDate = endDateEl.value;
-
-                    // Buat URL
-                    let url = 'actions/download_report.php';
-                    const params = [];
-                    
-                    if (startDate) {
-                        params.push(`start_date=${startDate}`);
-                    }
-                    if (endDate) {
-                        params.push(`end_date=${endDate}`);
-                    }
-
-                    if (params.length > 0) {
-                        url += '?' + params.join('&');
-                    }
-                    
-                    // Buka URL di tab baru untuk memicu download
-                    window.open(url, '_blank');
-                });
-            }
-        });
-    </script>
-
+    <script src="js/admin_dashboard.js"></script>
 </body>
 </html>

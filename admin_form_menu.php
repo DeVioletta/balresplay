@@ -18,20 +18,20 @@ $variants_data = [];
 $image_preview = 'https://placehold.co/300x200/2c2c2c/a0a0a0?text=Preview+Gambar';
 $page_title = "Tambah Menu Baru";
 
-// [PERBAIKAN] Ambil semua kategori unik yang ada di database
-$db_categories_raw = getAllCategories($db); // Mengembalikan array of assoc [['category'=>'name'], ...]
+// Ambil semua kategori unik yang ada di database
+$db_categories_raw = getAllCategories($db); 
 $existing_categories = array_column($db_categories_raw, 'category');
 
-// Kategori default sistem (agar selalu ada opsi dasar)
+// Kategori default sistem
 $default_categories = ['rice', 'noodles', 'lite-easy', 'coffee', 'tea', 'non-coffee', 'signature'];
 
 // Gabungkan dan hapus duplikat
 $all_categories = array_unique(array_merge($default_categories, $existing_categories));
-sort($all_categories); // Urutkan abjad
+sort($all_categories); 
 
 if ($is_edit_mode) {
     $product_id = (int)$_GET['id'];
-    $product_data = getProductById($db, $product_id); //
+    $product_data = getProductById($db, $product_id); 
     
     if ($product_data) {
         $page_title = "Edit Menu: " . htmlspecialchars($product_data['name']);
@@ -64,36 +64,6 @@ if (!empty($variants_data)) {
     <link rel="stylesheet" href="css/variable.css">
     <link rel="stylesheet" href="css/admin_menu.css"> <link rel="stylesheet" href="css/menu_form.css"> <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
     <link href="https://fonts.googleapis.com/css2?family=Cormorant+Garamond:wght@300;400;600;700&family=Montserrat:wght@300;400;500&display=swap" rel="stylesheet">
-    
-    <style>
-        .admin-message { padding: 15px; border-radius: 5px; margin-bottom: 20px; font-weight: 500; }
-        .admin-message.error { background-color: var(--danger-color); color: var(--light-text); }
-        #variants-container .variant-row { grid-template-columns: 1fr 1fr 100px auto; gap: 15px; }
-        .variant-availability {
-            display: flex; align-items: center; justify-content: center; gap: 8px;
-            padding: 10px; background-color: var(--dark-bg); border-radius: 5px;
-        }
-        .variant-availability label { margin: 0; color: var(--text-muted); font-size: 0.9rem; cursor: pointer; }
-        .variant-availability input[type="checkbox"] { width: auto; cursor: pointer; }
-        
-        input:disabled, textarea:disabled, select:disabled {
-            background-color: var(--tertiary-color) !important;
-            color: var(--text-muted) !important;
-            cursor: not-allowed;
-            opacity: 0.7;
-        }
-        
-        /* Helper class untuk mode Simple (Satuan) */
-        .mode-simple .variant-name-input { display: none; }
-        .mode-simple .btn-delete-variant { visibility: hidden; } 
-        .mode-simple .variant-row { grid-template-columns: 1fr 100px auto; } 
-        
-        @media (max-width: 768px) {
-            #variants-container .variant-row { grid-template-columns: 1fr; }
-            .mode-simple .variant-row { grid-template-columns: 1fr; }
-            .variant-availability { justify-content: flex-start; }
-        }
-    </style>
 </head>
 <body>
     
@@ -183,12 +153,10 @@ if (!empty($variants_data)) {
                         </div>
                         <div class="form-group">
                             <label for="product_category">Kategori (Pilih yang sudah ada)</label>
-                            <!-- [PERBAIKAN] Dropdown Dinamis -->
                             <select id="product_category" name="product_category" <?php if ($is_dapur_readonly) echo 'disabled'; ?>>
                                 <option value="" <?php echo empty($product_data['category']) ? 'selected' : ''; ?>>Pilih Kategori</option>
                                 <?php 
                                     foreach ($all_categories as $cat) {
-                                        // Cek apakah kategori ini sama dengan kategori produk saat ini
                                         $selected = (isset($product_data['category']) && $product_data['category'] == $cat) ? 'selected' : '';
                                         echo "<option value=\"" . htmlspecialchars($cat) . "\" $selected>" . ucfirst(str_replace('-', ' ', $cat)) . "</option>";
                                     }
@@ -211,7 +179,6 @@ if (!empty($variants_data)) {
                     <div class="form-section">
                         <h4>Harga & Varian <?php if ($is_dapur_readonly) echo '(Hanya bisa ubah ketersediaan)'; ?></h4>
                         
-                        <!-- Radio Button Tipe Menu -->
                         <div class="form-group" style="margin-bottom: 25px;">
                             <label style="margin-bottom: 10px; display: block;">Tipe Menu:</label>
                             <div style="display: flex; gap: 20px; flex-wrap: wrap;">
@@ -298,175 +265,14 @@ if (!empty($variants_data)) {
         <div class="sidebar-overlay" id="sidebar-overlay"></div>
     </div>
 
+    <!-- Inject Config Variables for JS -->
     <script>
-        const isDapur = <?php echo json_encode($is_dapur_readonly); ?>;
-
-        document.addEventListener('DOMContentLoaded', () => {
-            const hamburger = document.getElementById('hamburger');
-            const sidebar = document.getElementById('sidebar');
-            const overlay = document.getElementById('sidebar-overlay');
-            if (hamburger) hamburger.addEventListener('click', () => sidebar.classList.add('show'));
-            if (overlay) overlay.addEventListener('click', () => sidebar.classList.remove('show'));
-
-            const variantsContainer = document.getElementById('variants-container');
-            const addVariantBtn = document.getElementById('add-variant-btn');
-            
-            const typeRadios = document.querySelectorAll('input[name="ui_product_type"]');
-            
-            typeRadios.forEach(radio => {
-                radio.addEventListener('change', (e) => {
-                    if (isDapur) return;
-
-                    if (e.target.value === 'simple') {
-                        // Jika pindah ke Satuan
-                        const rows = variantsContainer.querySelectorAll('.variant-row');
-                        const confirmMsg = "Mengubah ke tipe 'Satuan' akan menghapus semua varian tambahan. Lanjutkan?";
-                        
-                        if (rows.length > 1) {
-                            if (!confirm(confirmMsg)) {
-                                document.querySelector('input[value="variable"]').checked = true;
-                                return;
-                            }
-                        }
-
-                        while (variantsContainer.children.length > 1) {
-                            variantsContainer.lastChild.remove();
-                        }
-
-                        const firstRowName = variantsContainer.querySelector('input[name*="[name]"]');
-                        if (firstRowName) firstRowName.value = '';
-
-                        variantsContainer.classList.add('mode-simple');
-                        addVariantBtn.style.display = 'none';
-
-                    } else {
-                        // Jika pindah ke Varian
-                        variantsContainer.classList.remove('mode-simple');
-                        addVariantBtn.style.display = 'inline-flex';
-                    }
-                });
-            });
-
-            let variantIndex = <?php echo count($variants_data) > 0 ? count($variants_data) : 1; ?>;
-
-            addVariantBtn.addEventListener('click', () => {
-                let maxIndex = -1;
-                variantsContainer.querySelectorAll('.variant-row').forEach(row => {
-                   const inputName = row.querySelector('input[name^="variants"]');
-                   if(inputName) {
-                       const matches = inputName.name.match(/\[(\d+)\]/);
-                       if(matches && matches[1]) {
-                           const idx = parseInt(matches[1]);
-                           if(idx > maxIndex) maxIndex = idx;
-                       }
-                   }
-                });
-                variantIndex = maxIndex + 1;
-
-                const newRow = document.createElement('div');
-                newRow.classList.add('variant-row');
-                
-                newRow.innerHTML = `
-                    <input type="text" name="variants[${variantIndex}][name]" class="variant-name-input" placeholder="Nama Varian (cth: Hot / Ice)" ${isDapur ? 'disabled' : ''}>
-                    <input type="number" name="variants[${variantIndex}][price]" placeholder="Harga" required ${isDapur ? 'disabled' : ''}>
-                    <div class="variant-availability">
-                        <input type="checkbox" id="available-${variantIndex}" name="variants[${variantIndex}][is_available]" value="1" checked>
-                        <label for="available-${variantIndex}">Tersedia</label>
-                    </div>
-                    <button type="button" class="btn btn-delete-variant" ${isDapur ? 'disabled' : ''}>
-                        <i class="fas fa-trash"></i>
-                    </button>
-                `;
-                variantsContainer.appendChild(newRow);
-            });
-
-            variantsContainer.addEventListener('click', (e) => {
-                if (e.target.closest('.btn-delete-variant')) {
-                    if (variantsContainer.children.length > 1) {
-                        e.target.closest('.variant-row').remove();
-                    } else {
-                        const lastRow = variantsContainer.querySelector('.variant-row');
-                        const nameInput = lastRow.querySelector('input[type="text"]');
-                        if(nameInput) nameInput.value = '';
-                        
-                        const priceInput = lastRow.querySelector('input[type="number"]');
-                        if(priceInput) priceInput.value = '';
-                        
-                        lastRow.querySelector('input[type="checkbox"]').checked = true;
-                        alert("Minimal harus ada satu harga.");
-                    }
-                }
-            });
-
-            const imageInput = document.getElementById('product_image');
-            const imagePreview = document.getElementById('image_preview');
-            const originalImageSrc = imagePreview.src;
-            imageInput.addEventListener('change', (e) => {
-                const file = e.target.files[0];
-                if (file) {
-                    const reader = new FileReader();
-                    reader.onload = (event) => { imagePreview.src = event.target.result; };
-                    reader.readAsDataURL(file);
-                } else {
-                    imagePreview.src = originalImageSrc;
-                }
-            });
-
-            // Validasi Form
-            const menuForm = document.getElementById('menu-form');
-            const errorMessage = document.getElementById('form-error-message');
-            
-            menuForm.addEventListener('submit', (e) => {
-                if (isDapur) { return; }
-                
-                errorMessage.style.display = 'none';
-                errorMessage.innerHTML = '';
-                let errors = [];
-
-                const requiredFields = menuForm.querySelectorAll('[required]');
-                requiredFields.forEach(field => {
-                    if (field.disabled || field.offsetParent === null) return;
-
-                    if (field.value.trim() === '') {
-                        let fieldName = field.placeholder || field.name;
-                        const labelElement = menuForm.querySelector(`label[for="${field.id}"]`);
-                        if (labelElement) fieldName = labelElement.textContent;
-                        
-                        if (fieldName.includes('Nama Menu')) errors.push('- Nama Menu wajib diisi.');
-                        else if (fieldName.includes('Harga')) errors.push('- Harga wajib diisi.');
-                        else if (!errors.includes(`- ${fieldName} wajib diisi.`)) errors.push(`- ${fieldName} wajib diisi.`);
-                    }
-                });
-
-                const category = document.getElementById('product_category').value;
-                const newCategory = document.getElementById('new_category').value.trim();
-                if (category === '' && newCategory === '') {
-                    errors.push('- Kategori wajib dipilih atau diisi.');
-                }
-
-                if (errors.length > 0) {
-                    e.preventDefault(); 
-                    errorMessage.innerHTML = '<strong>Validasi Gagal:</strong><br>' + errors.join('<br>');
-                    errorMessage.style.display = 'block';
-                    window.scrollTo({ top: 0, behavior: 'smooth' });
-                } else {
-                    const isSimpleMode = document.querySelector('input[name="ui_product_type"][value="simple"]').checked;
-                    if (isSimpleMode) {
-                        const variantNameInputs = variantsContainer.querySelectorAll('.variant-name-input');
-                        variantNameInputs.forEach(input => input.value = '');
-                    }
-                }
-            });
-
-            const btnDeleteForm = document.getElementById('btn-delete-product-form');
-            if (btnDeleteForm) {
-                btnDeleteForm.addEventListener('click', () => {
-                    if (confirm('Apakah Anda yakin ingin menghapus menu ini?')) {
-                        window.location.href = 'actions/delete_menu.php?id=<?php echo $product_id ?? ""; ?>'; 
-                    }
-                });
-            }
-        });
+        window.config = {
+            isDapur: <?php echo json_encode($is_dapur_readonly); ?>,
+            initialVariantIndex: <?php echo count($variants_data) > 0 ? count($variants_data) : 1; ?>,
+            productId: <?php echo json_encode($product_id ?? null); ?>
+        };
     </script>
+    <script src="js/admin_form_menu.js"></script>
 </body>
 </html>
