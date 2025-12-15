@@ -57,7 +57,7 @@ document.addEventListener('DOMContentLoaded', () => {
     });
 
 
-    // --- [INTEGRASI MIDTRANS 2] LOGIKA TOMBOL & POPUP ---
+    // --- [INTEGRASI MIDTRANS] LOGIKA TOMBOL & POPUP ---
     const confirmOrderBtn = document.getElementById('confirm-order-btn');
 
     confirmOrderBtn.addEventListener('click', () => {
@@ -92,7 +92,7 @@ document.addEventListener('DOMContentLoaded', () => {
                     
                     // A. JIKA ADA SNAP TOKEN (Metode QRIS/Online)
                     if (data.snap_token) {
-                        // [LANGKAH 1] SIMPAN TOKEN KE SESSION STORAGE
+                        // SIMPAN TOKEN KE SESSION STORAGE
                         sessionStorage.setItem('pending_snap_token', data.snap_token);
                         sessionStorage.setItem('pending_order_id', data.order_id);
 
@@ -113,7 +113,7 @@ document.addEventListener('DOMContentLoaded', () => {
                                 confirmOrderBtn.textContent = 'Konfirmasi Pesanan';
                             },
                             onClose: function(){
-                                // [LANGKAH 2] REDIRECT KE MENU JIKA DI-CLOSE
+                                // REDIRECT KE MENU JIKA DI-CLOSE
                                 alert('Anda menutup popup. Silakan lanjutkan pembayaran di halaman Menu.');
                                 window.location.href = `menu.php?meja=${currentTableNumber}`;
                             }
@@ -167,17 +167,17 @@ document.addEventListener('DOMContentLoaded', () => {
             ).filter(note => note).join('; ')
         };
 
-        // 2. Simpan ke array session
+        // Simpan ke array session
         let existingOrders = JSON.parse(sessionStorage.getItem(orderStatusKey)) || [];
         if (!Array.isArray(existingOrders)) { existingOrders = []; }
         existingOrders.push(temporaryOrderData);
         sessionStorage.setItem(orderStatusKey, JSON.stringify(existingOrders));
         
-        // 3. Bersihkan keranjang
+        // Bersihkan keranjang
         sessionStorage.removeItem('cartData');
         sessionStorage.removeItem('cartTotalPrice');
 
-        // 4. Redirect
+        // Redirect
         window.location.href = `menu.php?meja=${tableNum}&order=success&id=${orderId}`;
     }
 });

@@ -1,4 +1,4 @@
-/* --- Base Styles --- */
+/* --- Global --- */
 body {
     font-family: "Montserrat", sans-serif;
     background-color: var(--darker-bg);
@@ -12,7 +12,7 @@ h1, h3, h4 {
     line-height: 1.2;
 }
 
-/* --- Main Container --- */
+/* --- Container Utama --- */
 .payment-container {
     max-width: 900px;
     margin: 0 auto;
@@ -35,7 +35,7 @@ h1, h3, h4 {
     color: var(--text-muted);
 }
 
-/* --- Layout --- */
+/* --- Layout Grid --- */
 .payment-content {
     display: grid;
     grid-template-columns: 1fr 1fr;
@@ -43,7 +43,7 @@ h1, h3, h4 {
     align-items: start;
 }
 
-/* --- Cards --- */
+/* --- Kartu Ringkasan & Metode --- */
 .order-summary-card,
 .payment-method-card {
     background-color: var(--dark-bg);
@@ -60,7 +60,7 @@ h1, h3, h4 {
     border-bottom: 1px solid var(--tertiary-color);
 }
 
-/* --- Order Summary Card --- */
+/* Detail Ringkasan Pesanan */
 .summary-details .summary-item {
     display: flex;
     justify-content: space-between;
@@ -111,6 +111,7 @@ h1, h3, h4 {
     justify-content: space-between;
     margin-bottom: 10px;
 }
+
 .summary-total .grand-total {
     font-size: 1.2rem;
     margin-top: 15px;
@@ -118,7 +119,7 @@ h1, h3, h4 {
     border-top: 1px solid var(--accent-color);
 }
 
-/* --- Payment Method Card --- */
+/* --- Pilihan Metode Pembayaran --- */
 .payment-options {
     display: flex;
     flex-direction: column;
@@ -165,6 +166,7 @@ h1, h3, h4 {
     color: var(--text-muted);
 }
 
+/* Instruksi Pembayaran */
 .payment-instructions {
     margin-top: 25px;
     padding: 20px;
@@ -197,6 +199,7 @@ h1, h3, h4 {
     margin-bottom: 15px;
 }
 
+/* Tombol Konfirmasi */
 .btn-confirm-order {
     width: 100%;
     margin-top: 25px;
@@ -206,11 +209,18 @@ h1, h3, h4 {
     background-color: var(--accent-color);
     color: var(--dark-bg);
 }
+
 .btn-confirm-order:hover {
     background-color: var(--accent-hover);
 }
 
-/* --- Back Link --- */
+.btn-confirm-order:disabled {
+    background-color: var(--tertiary-color);
+    cursor: not-allowed;
+    opacity: 0.7;
+}
+
+/* --- Navigasi Kembali --- */
 .back-to-menu {
     text-align: center;
     margin-top: 30px;
@@ -226,7 +236,7 @@ h1, h3, h4 {
     color: var(--light-text);
 }
 
-/* --- Responsive Design --- */
+/* --- Responsif --- */
 @media (max-width: 768px) {
     .payment-content {
         grid-template-columns: 1fr;
@@ -244,10 +254,4 @@ h1, h3, h4 {
     .payment-method-card {
         padding: 20px;
     }
-}
-
-.btn-confirm-order:disabled {
-    background-color: var(--tertiary-color);
-    cursor: not-allowed;
-    opacity: 0.7;
 }

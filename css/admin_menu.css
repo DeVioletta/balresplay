@@ -1,17 +1,12 @@
-/* Menggunakan variabel dari /css/variable.css */
-
-/* (BARU) Menambahkan box-sizing global */
+/* --- Global Layout --- */
 html {
     box-sizing: border-box;
 }
 
-*,
-*:before,
-*:after {
+*, *:before, *:after {
     box-sizing: inherit;
 }
 
-/* === STRUKTUR LAYOUT UTAMA === */
 body {
     background-color: var(--dark-bg);
     color: var(--light-text);
@@ -19,11 +14,7 @@ body {
     margin: 0;
 }
 
-h1,
-h2,
-h3,
-h4,
-h5 {
+h1, h2, h3, h4, h5 {
     font-family: "Cormorant Garamond", serif;
     font-weight: 600;
     line-height: 1.2;
@@ -35,7 +26,7 @@ h5 {
     min-height: 100vh;
 }
 
-/* === SIDEBAR (NAVIGASI KIRI) === */
+/* --- Sidebar (Navigasi Kiri) --- */
 .sidebar {
     background-color: var(--darker-bg);
     border-right: 1px solid var(--tertiary-color);
@@ -101,10 +92,8 @@ h5 {
     font-weight: 600;
 }
 
-/* (BARU) Footer Sidebar untuk Logout */
 .sidebar-footer {
     margin-top: auto;
-    /* Mendorong ke bawah */
     padding-top: 20px;
     border-top: 1px solid var(--tertiary-color);
 }
@@ -113,7 +102,6 @@ h5 {
     display: block;
     padding: 14px 18px;
     color: var(--danger-color);
-    /* Menggunakan warna merah */
     text-decoration: none;
     border-radius: 8px;
     margin-bottom: 8px;
@@ -132,8 +120,6 @@ h5 {
     color: var(--light-text);
 }
 
-
-/* (BARU) Overlay untuk sidebar mobile */
 .sidebar-overlay {
     display: none;
     position: fixed;
@@ -144,10 +130,9 @@ h5 {
     background: rgba(0, 0, 0, 0.4);
     backdrop-filter: blur(2px);
     z-index: 1000;
-    /* Di bawah sidebar, di atas main-content */
 }
 
-/* === KONTEN UTAMA === */
+/* --- Area Konten Utama --- */
 .main-content {
     padding: 24px;
     background-color: var(--dark-bg);
@@ -177,7 +162,7 @@ h5 {
     cursor: pointer;
 }
 
-/* === TOOLBAR MENU (FILTER & TOMBOL) === */
+/* --- Toolbar & Filter --- */
 .menu-toolbar {
     display: flex;
     flex-wrap: wrap;
@@ -193,7 +178,37 @@ h5 {
     gap: 10px;
 }
 
-/* === STYLING FORM (UMUM) === */
+.search-bar-container {
+    margin-bottom: 24px;
+}
+
+.search-input-wrapper {
+    position: relative;
+}
+
+.search-input-wrapper .fa-search {
+    position: absolute;
+    left: 15px;
+    top: 50%;
+    transform: translateY(-50%);
+    color: var(--text-muted);
+}
+
+#menu-search-input {
+    width: 100%;
+    padding: 12px 15px 12px 45px;
+    background-color: var(--secondary-color);
+}
+
+.no-search-results {
+    color: var(--text-muted);
+    text-align: center;
+    padding: 20px;
+    grid-column: 1 / -1;
+    display: none;
+}
+
+/* --- Komponen Form (Input, Button) --- */
 .btn {
     display: inline-flex;
     align-items: center;
@@ -254,7 +269,6 @@ textarea {
     font-family: "Montserrat", sans-serif;
     font-size: 1rem;
     box-sizing: border-box;
-    /* Penting untuk padding */
 }
 
 input:focus,
@@ -264,7 +278,13 @@ textarea:focus {
     border-color: var(--accent-color);
 }
 
-/* === (BARU) STYLE KARTU MENU (Dipindah dari menu2.css) === */
+/* --- Grid & Kartu Menu --- */
+.admin-menu-grid {
+    display: grid;
+    grid-template-columns: repeat(auto-fill, minmax(300px, 1fr));
+    gap: 30px;
+}
+
 .menu-item {
     background: var(--secondary-color);
     border-radius: 10px;
@@ -302,7 +322,6 @@ textarea:focus {
     display: flex;
     flex-direction: column;
     flex-grow: 1;
-    /* Membuat info item memenuhi sisa ruang */
 }
 
 .item-info h3 {
@@ -317,7 +336,6 @@ textarea:focus {
     font-size: 14px;
     line-height: 1.5;
     flex-grow: 1;
-    /* Mendorong meta ke bawah */
 }
 
 .item-price {
@@ -326,9 +344,7 @@ textarea:focus {
     color: var(--accent-color);
 }
 
-/* === (AKHIR) STYLE KARTU MENU === */
-
-/* === (BARU) BADGE KETERSEDIAAN === */
+/* Badge Ketersediaan */
 .availability-badge {
     position: absolute;
     top: 10px;
@@ -345,24 +361,10 @@ textarea:focus {
     background-color: var(--danger-color);
 }
 
-/* === (AKHIR) BADGE KETERSEDIAAN === */
-
-
-/* === GRID MENU ADMIN === */
-.admin-menu-grid {
-    display: grid;
-    grid-template-columns: repeat(auto-fill, minmax(300px, 1fr));
-    gap: 30px;
-}
-
-/* Menggunakan kembali style kartu dari menu.php (telah diekstrak di HTML) */
-/* Kita hanya perlu menambahkan style untuk bagian baru */
-
+/* Meta & Aksi Kartu */
 .item-meta-admin {
     display: flex;
-    /* (DIUBAH) Hapus justify-content: space-between; */
     justify-content: flex-start;
-    /* (BARU) Karena harga dihapus */
     align-items: center;
     margin-top: 15px;
 }
@@ -380,9 +382,7 @@ textarea:focus {
     display: grid;
     grid-template-columns: 1fr 1fr;
     gap: 30px;
-    /* <- Diubah dari 10px menjadi 15px */
     padding: 0 20px 20px;
-    /* Beda dari item-meta */
 }
 
 .btn-edit,
@@ -406,7 +406,6 @@ textarea:focus {
 
 .btn-delete {
     background-color: #8b0000;
-    /* Merah tua */
     color: var(--light-text);
 }
 
@@ -414,109 +413,7 @@ textarea:focus {
     background-color: #a52a2a;
 }
 
-
-/* === RESPONSIVE === */
-@media (max-width: 992px) {
-    .admin-layout {
-        grid-template-columns: 1fr;
-    }
-
-    .sidebar {
-        position: fixed;
-        left: -280px;
-        /* Lebar sidebar + 20px padding */
-        width: 260px;
-        z-index: 1001;
-        /* (DIUBAH) z-index tertinggi */
-        height: 100vh;
-        box-shadow: 0 0 20px rgba(0, 0, 0, 0.5);
-        /* (BARU) Tambah bayangan */
-    }
-
-    .sidebar.show {
-        left: 0;
-    }
-
-    /* (BARU) Tampilkan overlay saat sidebar terbuka */
-    .sidebar.show~.sidebar-overlay {
-        display: block;
-    }
-
-    .hamburger {
-        display: block;
-        z-index: 999;
-        /* (DIUBAH) Di bawah sidebar */
-    }
-
-    .admin-header h1 {
-        font-size: 1.8rem;
-    }
-
-    /* (BARU) LOGIKA SCROLL-X GRID MENU ADMIN */
-    .admin-menu-grid {
-        display: flex;
-        flex-wrap: nowrap;
-        overflow-x: auto;
-        gap: 15px;
-        padding: 20px 15px;
-        /* (DIUBAH) Padding lebih */
-        scroll-snap-type: x mandatory;
-        /* Hapus style grid */
-        grid-template-columns: none;
-        max-width: 100vw;
-    }
-
-    .admin-menu-grid .menu-item {
-        flex: 0 0 300px;
-        /* (DIUBAH) Lebar kartu tetap 300px */
-        scroll-snap-align: start;
-        width: 300px;
-        /* Paksa lebar */
-    }
-
-    /* Sembunyikan scrollbar */
-    .admin-menu-grid::-webkit-scrollbar {
-        display: none;
-    }
-
-    .admin-menu-grid {
-        -ms-overflow-style: none;
-        scrollbar-width: none;
-    }
-
-    /* (AKHIR) LOGIKA SCROLL-X */
-}
-
-@media (max-width: 576px) {
-    .menu-toolbar {
-        flex-direction: column;
-        align-items: stretch;
-    }
-
-    /* (BARU) Perbaiki filter group di mobile */
-    .filter-group {
-        display: flex;
-        flex-direction: column;
-        align-items: stretch;
-    }
-
-    .filter-group label {
-        margin-bottom: 5px;
-    }
-
-    .menu-toolbar .btn-primary {
-        text-align: center;
-        justify-content: center;
-    }
-
-    /* (BARU) Perkecil kartu di HP */
-    .admin-menu-grid .menu-item {
-        flex: 0 0 280px;
-        /* (DIUBAH) Lebar kartu 280px di HP */
-        width: 280px;
-    }
-}
-
+/* --- Pesan Notifikasi --- */
 .admin-message {
     padding: 15px;
     border-radius: 5px;
@@ -536,32 +433,81 @@ textarea:focus {
     color: var(--light-text);
 }
 
-.search-bar-container {
-    margin-bottom: 24px;
+/* --- Responsif (Admin Menu) --- */
+@media (max-width: 992px) {
+    .admin-layout {
+        grid-template-columns: 1fr;
+    }
+
+    .sidebar {
+        position: fixed;
+        left: -280px;
+        width: 260px;
+        z-index: 1001;
+        height: 100vh;
+        box-shadow: 0 0 20px rgba(0, 0, 0, 0.5);
+    }
+
+    .sidebar.show {
+        left: 0;
+    }
+
+    .sidebar.show ~ .sidebar-overlay {
+        display: block;
+    }
+
+    .hamburger {
+        display: block;
+        z-index: 999;
+    }
+
+    .admin-header h1 {
+        font-size: 1.8rem;
+    }
+
+    /* Scroll Horizontal untuk Menu di Tablet */
+    .admin-menu-grid {
+        display: flex;
+        flex-wrap: nowrap;
+        overflow-x: auto;
+        gap: 15px;
+        padding: 20px 15px;
+        scroll-snap-type: x mandatory;
+        grid-template-columns: none;
+        max-width: 100vw;
+        -ms-overflow-style: none;
+        scrollbar-width: none;
+    }
+
+    .admin-menu-grid::-webkit-scrollbar {
+        display: none;
+    }
+
+    .admin-menu-grid .menu-item {
+        flex: 0 0 300px;
+        scroll-snap-align: start;
+        width: 300px;
+    }
 }
 
-.search-input-wrapper {
-    position: relative;
-}
+@media (max-width: 576px) {
+    .menu-toolbar,
+    .filter-group {
+        flex-direction: column;
+        align-items: stretch;
+    }
 
-.search-input-wrapper .fa-search {
-    position: absolute;
-    left: 15px;
-    top: 50%;
-    transform: translateY(-50%);
-    color: var(--text-muted);
-}
+    .filter-group label {
+        margin-bottom: 5px;
+    }
 
-#menu-search-input {
-    width: 100%;
-    padding: 12px 15px 12px 45px;
-    background-color: var(--secondary-color);
-}
+    .menu-toolbar .btn-primary {
+        text-align: center;
+        justify-content: center;
+    }
 
-.no-search-results {
-    color: var(--text-muted);
-    text-align: center;
-    padding: 20px;
-    grid-column: 1 / -1;
-    display: none;
+    .admin-menu-grid .menu-item {
+        flex: 0 0 280px;
+        width: 280px;
+    }
 }

@@ -1,9 +1,4 @@
-/* =========================================
- CSS KHUSUS UNTUK FORM ADMIN (admin_form_menu.php) 
-=========================================
-*/
-
-/* === (BARU) STYLING PREVIEW GAMBAR === */
+/* --- Preview Gambar --- */
 .image-preview-container {
     width: 100%;
     max-width: 400px;
@@ -23,7 +18,6 @@
 }
 
 #product_image {
-    /* Style input file */
     padding: 0;
 }
 
@@ -41,7 +35,7 @@
     background-color: var(--tertiary-color);
 }
 
-/* === HALAMAN FORMULIR === */
+/* --- Layout Form --- */
 .form-container {
     max-width: 900px;
     margin: 0 auto;
@@ -84,11 +78,21 @@
     border-radius: 5px;
 }
 
-/* Varian Dinamis */
+/* --- Variabel Input --- */
+input:disabled,
+textarea:disabled,
+select:disabled {
+    background-color: var(--tertiary-color) !important;
+    color: var(--text-muted) !important;
+    cursor: not-allowed;
+    opacity: 0.7;
+}
+
+/* --- Baris Varian --- */
 #variants-container .variant-row {
     display: grid;
-    grid-template-columns: 1fr 1fr 1fr auto;
-    gap: 10px;
+    grid-template-columns: 1fr 1fr 100px auto;
+    gap: 15px;
     align-items: center;
     margin-bottom: 10px;
 }
@@ -114,58 +118,6 @@
     background: none;
 }
 
-
-.form-actions {
-    display: flex;
-    justify-content: flex-end;
-    gap: 15px;
-    padding: 24px 30px;
-    background-color: var(--secondary-color);
-}
-
-/* === RESPONSIVE UNTUK FORM === */
-@media (max-width: 768px) {
-
-    /* (DIUBAH) dari 992px */
-    #variants-container .variant-row {
-        grid-template-columns: 1fr;
-        /* Stack di HP / Tablet potret */
-    }
-}
-
-@media (max-width: 576px) {
-    .form-section {
-        padding: 20px 15px;
-    }
-
-    .form-actions {
-        padding: 20px 15px;
-        flex-direction: column-reverse;
-    }
-
-    .form-actions .btn {
-        width: 100%;
-        justify-content: center;
-    }
-}
-
-.admin-message {
-    padding: 15px;
-    border-radius: 5px;
-    margin-bottom: 20px;
-    font-weight: 500;
-}
-
-.admin-message.error {
-    background-color: var(--danger-color);
-    color: var(--light-text);
-}
-
-#variants-container .variant-row {
-    grid-template-columns: 1fr 1fr 100px auto;
-    gap: 15px;
-}
-
 .variant-availability {
     display: flex;
     align-items: center;
@@ -188,16 +140,7 @@
     cursor: pointer;
 }
 
-input:disabled,
-textarea:disabled,
-select:disabled {
-    background-color: var(--tertiary-color) !important;
-    color: var(--text-muted) !important;
-    cursor: not-allowed;
-    opacity: 0.7;
-}
-
-/* Helper class untuk mode Simple (Satuan) */
+/* Helper class untuk Mode Simple (Tanpa Varian) */
 .mode-simple .variant-name-input {
     display: none;
 }
@@ -210,9 +153,31 @@ select:disabled {
     grid-template-columns: 1fr 100px auto;
 }
 
+/* --- Tombol Aksi & Pesan --- */
+.form-actions {
+    display: flex;
+    justify-content: flex-end;
+    gap: 15px;
+    padding: 24px 30px;
+    background-color: var(--secondary-color);
+}
+
+.admin-message {
+    padding: 15px;
+    border-radius: 5px;
+    margin-bottom: 20px;
+    font-weight: 500;
+}
+
+.admin-message.error {
+    background-color: var(--danger-color);
+    color: var(--light-text);
+}
+
+/* --- Responsif --- */
 @media (max-width: 768px) {
     #variants-container .variant-row {
-        grid-template-columns: 1fr;
+        grid-template-columns: 1fr; /* Stack vertikal di mobile */
     }
 
     .mode-simple .variant-row {
@@ -221,5 +186,21 @@ select:disabled {
 
     .variant-availability {
         justify-content: flex-start;
+    }
+}
+
+@media (max-width: 576px) {
+    .form-section {
+        padding: 20px 15px;
+    }
+
+    .form-actions {
+        padding: 20px 15px;
+        flex-direction: column-reverse;
+    }
+
+    .form-actions .btn {
+        width: 100%;
+        justify-content: center;
     }
 }
