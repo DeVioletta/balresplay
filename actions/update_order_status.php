@@ -1,18 +1,23 @@
 <?php
+/**
+ * File: update_order_status.php
+ * Deskripsi: API untuk memperbarui status pesanan dari Admin/Kasir.
+ * Fungsi: Memproses perubahan status dan memvalidasi aturan khusus (misal: QRIS).
+ */
+
 require_once __DIR__ . '/../config/database.php';
 startSecureSession();
 redirectIfNotLoggedIn('../admin_login.php');
 
-// Set header respons ke JSON
 header('Content-Type: application/json');
 
-// 1. Role Check
+// 1. Validasi Role
 if ($_SESSION['role'] !== 'Kasir' && $_SESSION['role'] !== 'Super Admin') {
     echo json_encode(['status' => 'error', 'message' => 'Anda tidak memiliki izin.']);
     exit();
 }
 
-// 2. Ambil data POST
+// 2. Ambil data JSON dari request body
 $json_data = file_get_contents('php://input');
 $data = json_decode($json_data, true);
 
@@ -21,14 +26,9 @@ if ($data && isset($data['order_id']) && isset($data['status'])) {
     $order_id = (int)$data['order_id'];
     $new_status = $data['status'];
 
-    // 3. Validasi status yang diizinkan
     $allowed_statuses = [
-        'Menunggu Pembayaran', 
-        'Kirim ke Dapur', 
-        'Sedang Dimasak', 
-        'Siap Diantar', 
-        'Selesai', 
-        'Dibatalkan'
+        'Menunggu Pembayaran', 'Kirim ke Dapur', 'Sedang Dimasak', 
+        'Siap Diantar', 'Selesai', 'Dibatalkan'
     ];
     
     if (!in_array($new_status, $allowed_statuses)) {
@@ -36,8 +36,8 @@ if ($data && isset($data['order_id']) && isset($data['status'])) {
         exit();
     }
 
-    // [PERBAIKAN UTAMA] Validasi Keamanan untuk QRIS
-    // Cek status saat ini dan metode pembayaran di database
+    // 3. Pengecekan Keamanan (Security Check)
+    // Cek detail pesanan saat ini untuk validasi aturan bisnis
     $check_stmt = $db->prepare("SELECT status, payment_method FROM orders WHERE order_id = ?");
     $check_stmt->bind_param("i", $order_id);
     $check_stmt->execute();
@@ -53,10 +53,11 @@ if ($data && isset($data['order_id']) && isset($data['status'])) {
     $payment_method = $current_order['payment_method'];
     $check_stmt->close();
 
-    // LOGIKA BLOKIR: 
-    // Jika Metode = QRIS, dan Status Sekarang = Menunggu Pembayaran
-    // MAKA: Tidak boleh diubah ke 'Kirim ke Dapur' secara manual.
-    // Hanya boleh diubah ke 'Dibatalkan' (jika customer tidak jadi bayar).
+    // -- ATURAN BLOKIR QRIS --
+    // Jika metode bayar QRIS dan status masih 'Menunggu Pembayaran',
+    // staf TIDAK BOLEH mengubah ke 'Kirim ke Dapur' secara manual.
+    // Hal ini karena konfirmasi harus murni dari sistem Midtrans (otomatis).
+    // Kecuali jika staf ingin membatalkan pesanan.
     if ($payment_method === 'QRIS' && $current_status === 'Menunggu Pembayaran') {
         if ($new_status === 'Kirim ke Dapur') {
             echo json_encode([
@@ -65,7 +66,7 @@ if ($data && isset($data['order_id']) && isset($data['status'])) {
             ]);
             exit();
         }
-        // Jika status baru bukan 'Dibatalkan' dan bukan 'Menunggu Pembayaran', tolak juga
+        
         if ($new_status !== 'Dibatalkan' && $new_status !== 'Menunggu Pembayaran') {
              echo json_encode([
                 'status' => 'error', 
@@ -75,9 +76,10 @@ if ($data && isset($data['order_id']) && isset($data['status'])) {
         }
     }
 
-    // 4. Proses Update Database (Jika lolos validasi)
+    // 4. Update Status Database
     $sql = "UPDATE orders SET status = ?";
     
+    // Update timestamp terkait sesuai status baru
     if ($new_status == 'Kirim ke Dapur') {
         $sql .= ", confirmed_at = NOW()";
     } else if ($new_status == 'Sedang Dimasak') {
@@ -95,7 +97,6 @@ if ($data && isset($data['order_id']) && isset($data['status'])) {
         if ($stmt->affected_rows > 0) {
             echo json_encode(['status' => 'success', 'message' => 'Status berhasil diperbarui.']);
         } else {
-            // Bisa terjadi jika status baru = status lama
             echo json_encode(['status' => 'success', 'message' => 'Status sudah sesuai.']);
         }
     } else {

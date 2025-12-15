@@ -1,19 +1,29 @@
 <?php
+/**
+ * File: get_order_status.php
+ * Deskripsi: API Endpoint untuk Client Side (Polling).
+ * Fungsi: Mengambil status pesanan aktif berdasarkan Session ID pelanggan.
+ */
+
 require_once __DIR__ . '/../config/database.php';
 startSecureSession();
 header('Content-Type: application/json');
 
-// --- [UPDATE] Validasi Customer ID ---
-// Kita tidak lagi mengecek $_GET['meja'] untuk query, demi keamanan
+// --------------------------------------------------------------------------
+// 1. Validasi Sesi Pelanggan
+// --------------------------------------------------------------------------
+// Memastikan hanya pelanggan dengan sesi valid yang bisa melihat pesanan mereka.
 if (!isset($_SESSION['customer_id'])) {
-    // Jika tidak ada sesi ID, berarti user belum pernah buka menu.php atau sesi habis
     echo json_encode(['status' => 'empty', 'message' => 'No session ID']);
     exit;
 }
 
 $customer_id = $_SESSION['customer_id'];
 
-// 1. Ambil SEMUA pesanan aktif milik customer_id ini
+// --------------------------------------------------------------------------
+// 2. Query Data Pesanan Utama
+// --------------------------------------------------------------------------
+// Mengambil pesanan yang belum 'Selesai' atau 'Dibatalkan'.
 $sql_order = "
     SELECT order_id, status, notes, order_time, total_price, table_number
     FROM orders 
@@ -35,7 +45,9 @@ $all_orders = [];
 $orders_data = $result->fetch_all(MYSQLI_ASSOC);
 $stmt->close();
 
-// 2. Siapkan query item
+// --------------------------------------------------------------------------
+// 3. Query Detail Item per Pesanan
+// --------------------------------------------------------------------------
 $sql_items = "
     SELECT 
         oi.quantity,
@@ -50,7 +62,6 @@ $sql_items = "
 ";
 $stmt_items = $db->prepare($sql_items);
 
-// 3. Loop untuk setiap pesanan dan ambil item-nya
 foreach ($orders_data as $order) {
     $order_id = $order['order_id'];
     
@@ -59,11 +70,12 @@ foreach ($orders_data as $order) {
     $items_result = $stmt_items->get_result();
     $items = $items_result->fetch_all(MYSQLI_ASSOC);
 
+    // Struktur data yang dikembalikan ke frontend
     $response_order = [
         'order_id' => (int)$order_id,
-        'table_number' => (int)$order['table_number'], // Kirim info meja juga untuk verifikasi visual
+        'table_number' => (int)$order['table_number'],
         'status' => $order['status'],
-        'orderTime' => strtotime($order['order_time']) * 1000,
+        'orderTime' => strtotime($order['order_time']) * 1000, // Timestamp JS (ms)
         'notes' => $order['notes'],
         'total_price' => (float)$order['total_price'],
         'items' => $items

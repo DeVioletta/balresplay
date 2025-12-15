@@ -1,10 +1,14 @@
 <?php
-// FILE: balresplay/actions/notification_handler.php
+/**
+ * File: notification_handler.php
+ * Deskripsi: Menangani Webhook/HTTP Notification dari Midtrans.
+ * Fungsi: Mengupdate status pesanan di database secara otomatis berdasarkan status pembayaran.
+ */
 
 require_once __DIR__ . '/../config/database.php';
 require_once __DIR__ . '/midtrans.php';
 
-// Ambil input mentah dari Midtrans
+// Ambil input JSON mentah yang dikirim oleh Midtrans
 $json_result = file_get_contents('php://input');
 $notification = json_decode($json_result, true);
 
@@ -14,44 +18,47 @@ $order_id = $notification['order_id'];
 $transaction_status = $notification['transaction_status'];
 $fraud_status = $notification['fraud_status'];
 
-// --- LOGIKA UTAMA ---
+// --------------------------------------------------------------------------
+// Logika Penanganan Status Transaksi
+// --------------------------------------------------------------------------
 
 if ($transaction_status == 'capture') {
+    // Untuk pembayaran kartu kredit
     if ($fraud_status == 'challenge') {
-        // Kartu kredit dicurigai, biarkan Menunggu
+        // Transaksi dicurigai fraud -> Tahan status
         $stmt = $db->prepare("UPDATE orders SET status = 'Menunggu Pembayaran' WHERE order_id = ?");
         $stmt->bind_param("i", $order_id);
         $stmt->execute();
     } else if ($fraud_status == 'accept') {
-        // Sukses
+        // Transaksi sukses
         $stmt = $db->prepare("UPDATE orders SET status = 'Kirim ke Dapur', confirmed_at = NOW() WHERE order_id = ?");
         $stmt->bind_param("i", $order_id);
         $stmt->execute();
     }
 } else if ($transaction_status == 'settlement') {
-    // Lunas (QRIS/GoPay/Transfer) -> SUKSES
+    // Pembayaran lunas (QRIS/GoPay/Virtual Account) -> Update status ke Dapur
     $stmt = $db->prepare("UPDATE orders SET status = 'Kirim ke Dapur', confirmed_at = NOW() WHERE order_id = ?");
     $stmt->bind_param("i", $order_id);
     $stmt->execute();
 
 } else if ($transaction_status == 'cancel' || $transaction_status == 'deny' || $transaction_status == 'expire') {
-    // [MODIFIKASI] JIKA GAGAL/EXPIRED -> HAPUS DARI DATABASE
-    // Agar tidak menuh-menuhin database dengan pesanan sampah
-    
-    // Karena di SQL Anda ada 'ON DELETE CASCADE', item pesanan juga akan terhapus otomatis.
+    // Pembayaran gagal atau kadaluarsa -> Hapus pesanan dari database
+    // Ini bertujuan menjaga kebersihan database dari order yang tidak jadi dibayar.
+    // Item pesanan di `order_items` akan terhapus otomatis karena ON DELETE CASCADE.
     $stmt = $db->prepare("DELETE FROM orders WHERE order_id = ?");
     $stmt->bind_param("i", $order_id);
     $stmt->execute();
     
     echo "Order deleted (Expired/Cancelled)";
-    exit(); // Selesai
+    exit(); 
     
 } else if ($transaction_status == 'pending') {
-    // Masih menunggu bayar -> Biarkan status 'Menunggu Pembayaran'
+    // Menunggu pembayaran customer
     $stmt = $db->prepare("UPDATE orders SET status = 'Menunggu Pembayaran' WHERE order_id = ?");
     $stmt->bind_param("i", $order_id);
     $stmt->execute();
 }
 
+// Berikan respon 200 OK ke Midtrans
 http_response_code(200);
 ?>

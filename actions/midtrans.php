@@ -1,5 +1,8 @@
 <?php
-// FILE: balresplay/actions/midtrans.php
+/**
+ * File: midtrans.php
+ * Deskripsi: Konfigurasi library Midtrans dan fungsi helper.
+ */
 
 require_once __DIR__ . '/../vendor/autoload.php';
 
@@ -9,18 +12,18 @@ use Midtrans\Snap;
 // ============================================
 // KONFIGURASI MIDTRANS
 // ============================================
-// GANTI DENGAN SERVER KEY ANDA (Pastikan Sandbox/Production sesuai)
+// GANTI 'SERVER KEY' DENGAN KUNCI SERVER ASLI DARI DASHBOARD MIDTRANS
 Config::$serverKey = 'SERVER KEY'; 
-Config::$isProduction = false;
+Config::$isProduction = false; // Ubah ke true jika sudah live
 Config::$isSanitized = true;
 Config::$is3ds = true;
 
-
-// // [FIX 2] Inisialisasi Header Kosong untuk mencegah Warning "Undefined array key 10023"
-// Config::$curlOptions[CURLOPT_HTTPHEADER] = [];
-
 /**
- * Fungsi helper untuk mendapatkan Snap Token
+ * Fungsi helper untuk meminta Snap Token dari API Midtrans.
+ * * @param int $order_id ID Pesanan dari database.
+ * @param int $gross_amount Total harga yang harus dibayar.
+ * @return string Token Snap untuk membuka popup pembayaran.
+ * @throws Exception Jika request ke Midtrans gagal.
  */
 function getSnapToken($order_id, $gross_amount) {
     $params = [
@@ -28,7 +31,7 @@ function getSnapToken($order_id, $gross_amount) {
             'order_id' => $order_id,
             'gross_amount' => (int)$gross_amount, 
         ],
-        // Opsional: Tambah durasi expiry
+        // Pengaturan kedaluwarsa token/pembayaran (opsional)
         'custom_expiry' => [
             'start_time' => date("Y-m-d H:i:s O"),
             'unit' => 'minute',
@@ -39,7 +42,6 @@ function getSnapToken($order_id, $gross_amount) {
     try {
         return Snap::getSnapToken($params);
     } catch (Exception $e) {
-        // [PENTING] Jangan return null. Lempar error agar terbaca di handle_order
         throw new Exception($e->getMessage());
     }
 }
