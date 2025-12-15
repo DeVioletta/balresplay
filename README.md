@@ -34,6 +34,85 @@ Pastikan lingkungan pengembangan telah memenuhi kebutuhan berikut:
 
 ---
 
+## Anatomi Proyek
+
+Bagian ini menjelaskan struktur folder dan peran masing-masing komponen dalam proyek **BalResplay**, agar memudahkan pemahaman alur kode dan pemeliharaan.
+
+```text
+/
+├── actions/                 # Endpoint logika backend (CRUD, auth, order, payment)
+│   ├── delete_account.php       # Hapus akun pengguna
+│   ├── delete_menu.php          # Hapus data menu
+│   ├── download_report.php      # Export laporan (Excel)
+│   ├── get_order_status.php     # Ambil status pesanan (AJAX)
+│   ├── handle_account.php       # Tambah / update akun
+│   ├── handle_login.php         # Proses login admin
+│   ├── handle_logout.php        # Proses logout
+│   ├── handle_order.php         # Proses pembuatan pesanan
+│   ├── midtrans.php             # Konfigurasi & helper Midtrans
+│   ├── notification_handler.php # Webhook Midtrans
+│   ├── save_menu.php            # Simpan / update menu
+│   ├── save_settings.php        # Simpan pengaturan sistem
+│   ├── update_kitchen_status.php# Update status dapur
+│   ├── update_order_status.php  # Update status pesanan
+│   └── validate_pending_order.php # Validasi pesanan tertunda
+│
+├── config/                  # Konfigurasi inti aplikasi
+│   ├── database.php            # Koneksi database
+│   └── structure_db.sql        # Struktur database (opsional)
+│
+├── css/                     # Styling (Admin, Menu, Kitchen)
+│   ├── admin_dashboard.css
+│   ├── admin_login.css
+│   ├── admin_menu.css
+│   ├── admin_orders.css
+│   ├── admin_settings.css
+│   ├── header.css
+│   ├── kitchen_display.css
+│   ├── menu.css
+│   ├── menu_form.css
+│   ├── pembayaran.css
+│   └── variable.css
+│
+├── images/                  # Asset gambar
+│   ├── uploads/                # Upload gambar menu
+│   ├── americano.jpg
+│   ├── americano.png
+│   ├── bakery-bg.jpg
+│   └── logo_fix.png
+│
+├── includes/                # Komponen PHP reusable
+│   └── header.php
+│
+├── js/                      # Logic frontend (AJAX & interaksi UI)
+│   ├── admin_dashboard.js
+│   ├── admin_form_menu.js
+│   ├── admin_login.js
+│   ├── admin_menu.js
+│   ├── admin_orders.js
+│   ├── admin_settings.js
+│   ├── kitchen_display.js
+│   ├── menu.js
+│   └── payment.js
+│
+├── vendor/                  # Dependency Composer (auto-generated)
+├── .gitattributes
+├── .gitignore
+├── admin_dashboard.php      # Dashboard admin
+├── admin_form_menu.php      # Form tambah/edit menu
+├── admin_login.php          # Halaman login admin
+├── admin_menu.php           # Manajemen menu
+├── admin_orders.php         # Manajemen pesanan
+├── admin_settings.php       # Pengaturan sistem
+├── balresplay_backup.sql    # Database dump utama
+├── composer.json            # Konfigurasi Composer
+├── composer.lock
+├── kitchen_display.php      # Kitchen Display System
+├── menu.php                 # Halaman menu pelanggan
+├── payment.php              # Proses pembayaran
+└── README.md
+```
+
 ## Instalasi & Konfigurasi
 
 ### 1. Unduh Proyek
